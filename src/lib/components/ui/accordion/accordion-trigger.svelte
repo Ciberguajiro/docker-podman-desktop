@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Accordion as AccordionPrimitive } from "bits-ui";
-	import { cn, type WithoutChild } from "@lib/utils.js";
+	import { cn, type WithoutChild } from "$lib/utils";
 	import { HugeiconsIcon } from "@hugeicons/svelte"
 	import { ArrowDown01Icon } from '@hugeicons/core-free-icons';
 	import { ArrowUp01Icon } from '@hugeicons/core-free-icons';

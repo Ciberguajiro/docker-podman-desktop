@@ -3,14 +3,11 @@ use crate::types::{
     CommandResult, ContainerFile, ContainerStats, DockerContainer, DockerImage, DockerNetwork,
     DockerVolume, Engine, ImageHistoryEntry,
 };
-use tokio::process::Command;
-use tokio::time::{timeout, Duration};
 
 pub async fn check_engine_cli(engine: &Engine) -> bool {
     let cmd = engine.to_string();
-    let output = Command::new(cmd).arg("--version").output().await;
-
-    output.map(|o| o.status.success()).unwrap_or(false)
+    let result = cli::run_command_with_elevation_check(&cmd, &["--version"], false, 5).await;
+    result.success
 }
 
 pub async fn run_engine_command(engine: &Engine, args: &[&str]) -> CommandResult {
@@ -26,49 +23,7 @@ pub async fn run_generic_command_with_timeout(
     args: &[&str],
     seconds: u64,
 ) -> CommandResult {
-    let cmd_timeout = Duration::from_secs(seconds);
-
-    let process = Command::new(cmd).args(args).output();
-
-    let result = timeout(cmd_timeout, process).await;
-
-    match result {
-        Ok(Ok(output)) => {
-            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-
-            if output.status.success() {
-                CommandResult {
-                    success: true,
-                    output: stdout,
-                    error: if stderr.is_empty() {
-                        None
-                    } else {
-                        Some(stderr)
-                    },
-                }
-            } else {
-                CommandResult {
-                    success: false,
-                    output: stdout,
-                    error: Some(stderr),
-                }
-            }
-        }
-        Ok(Err(e)) => CommandResult {
-            success: false,
-            output: String::new(),
-            error: Some(format!("Failed to execute {} command: {}", cmd, e)),
-        },
-        Err(_) => CommandResult {
-            success: false,
-            output: String::new(),
-            error: Some(format!(
-                "{} command timed out after {} seconds",
-                cmd, seconds
-            )),
-        },
-    }
+    cli::run_command_with_elevation_check(cmd, args, false, seconds).await
 }
 
 pub fn parse_docker_containers(output: &str) -> Vec<DockerContainer> {
@@ -152,47 +107,48 @@ fn parse_single_container(json: &serde_json::Value) -> Option<DockerContainer> {
         Vec::new()
     };
 
-    // Extract compose project and service from labels
-    let labels_str = json["Labels"].as_str().unwrap_or("");
-    let compose_project = if labels_str.is_empty() {
-        json["Labels"]["com.docker.compose.project"]
-            .as_str()
-            .map(|s| s.to_string())
-    } else {
-        labels_str.split(", ").find_map(|label| {
-            if let Some(pos) = label.find("com.docker.compose.project=") {
-                Some(label[pos + 27..].to_string())
-            } else {
-                None
+    let (compose_project, compose_service) = if let Some(labels) = json["Labels"].as_object() {
+        (
+            labels
+                .get("com.docker.compose.project")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            labels
+                .get("com.docker.compose.service")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+        )
+    } else if let Some(labels_str) = json["Labels"].as_str() {
+        // Docker style labels are comma separated
+        let mut project = None;
+        let mut service = None;
+        for label in labels_str.split(", ") {
+            if label.starts_with("com.docker.compose.project=") {
+                project = Some(label.replace("com.docker.compose.project=", ""));
+            } else if label.starts_with("com.docker.compose.service=") {
+                service = Some(label.replace("com.docker.compose.service=", ""));
             }
-        })
+        }
+        (project, service)
+    } else {
+        (None, None)
     };
 
-    let compose_service = if labels_str.is_empty() {
-        json["Labels"]["com.docker.compose.service"]
-            .as_str()
-            .map(|s| s.to_string())
+    if id.is_empty() && name.is_empty() {
+        None
     } else {
-        labels_str.split(", ").find_map(|label| {
-            if let Some(pos) = label.find("com.docker.compose.service=") {
-                Some(label[pos + 27..].to_string())
-            } else {
-                None
-            }
+        Some(DockerContainer {
+            id,
+            name,
+            image,
+            status,
+            state,
+            created,
+            ports,
+            compose_project,
+            compose_service,
         })
-    };
-
-    Some(DockerContainer {
-        id,
-        name,
-        image,
-        status,
-        state,
-        created,
-        ports,
-        compose_project,
-        compose_service,
-    })
+    }
 }
 
 pub fn parse_docker_images(output: &str) -> Vec<DockerImage> {
@@ -233,25 +189,27 @@ fn parse_single_image(json: &serde_json::Value) -> Option<DockerImage> {
         .unwrap_or("")
         .to_string();
 
-    // Podman may use Names array for repository and tag
-    let (repository, tag) = if let Some(repo) = json["Repository"].as_str() {
-        (
-            repo.to_string(),
-            json["Tag"].as_str().unwrap_or("").to_string(),
-        )
-    } else if let Some(names) = json["Names"].as_array() {
-        let full_name = names.get(0).and_then(|n| n.as_str()).unwrap_or("");
-        if let Some(pos) = full_name.find(':') {
-            (
-                full_name[..pos].to_string(),
-                full_name[pos + 1..].to_string(),
-            )
+    // Podman may return repository and tag separately or in Names array
+    let (repository, tag) = if let Some(names) = json["Names"].as_array() {
+        if let Some(name) = names.get(0).and_then(|n| n.as_str()) {
+            if let Some(pos) = name.rfind(':') {
+                (name[..pos].to_string(), name[pos + 1..].to_string())
+            } else {
+                (name.to_string(), "latest".to_string())
+            }
         } else {
-            (full_name.to_string(), "latest".to_string())
+            ("".to_string(), "".to_string())
         }
     } else {
-        ("".to_string(), "".to_string())
+        (
+            json["Repository"].as_str().unwrap_or("").to_string(),
+            json["Tag"].as_str().unwrap_or("").to_string(),
+        )
     };
+
+    if (id.is_empty() && repository.is_empty()) || repository == "<none>" {
+        return None;
+    }
 
     let size = json["Size"]
         .as_str()
@@ -276,18 +234,9 @@ fn parse_single_image(json: &serde_json::Value) -> Option<DockerImage> {
 pub fn parse_docker_volumes(output: &str) -> Vec<DockerVolume> {
     let mut volumes = Vec::new();
 
-    // Try to parse as a single JSON object or array
-    if let Ok(json) = serde_json::from_str::<serde_json::Value>(output) {
-        if let Some(vols) = json["Volumes"].as_array() {
-            // Docker style nested Volumes array
-            for vol in vols {
-                if let Some(v) = parse_single_volume(vol) {
-                    volumes.push(v);
-                }
-            }
-            return volumes;
-        } else if let Some(array) = json.as_array() {
-            // Podman style flat array
+    // Podman style [{}, {}]
+    if let Ok(json_array) = serde_json::from_str::<serde_json::Value>(output) {
+        if let Some(array) = json_array.as_array() {
             for item in array {
                 if let Some(v) = parse_single_volume(item) {
                     volumes.push(v);
@@ -297,15 +246,13 @@ pub fn parse_docker_volumes(output: &str) -> Vec<DockerVolume> {
         }
     }
 
-    // Fallback to line-delimited JSON
-    for line in output.lines() {
-        if line.is_empty() {
-            continue;
-        }
-
-        if let Ok(json) = serde_json::from_str::<serde_json::Value>(line) {
-            if let Some(v) = parse_single_volume(&json) {
-                volumes.push(v);
+    // Docker style {"Volumes": [{}, {}]}
+    if let Ok(json) = serde_json::from_str::<serde_json::Value>(output) {
+        if let Some(vols) = json["Volumes"].as_array() {
+            for item in vols {
+                if let Some(v) = parse_single_volume(item) {
+                    volumes.push(v);
+                }
             }
         }
     }
@@ -314,21 +261,20 @@ pub fn parse_docker_volumes(output: &str) -> Vec<DockerVolume> {
 }
 
 fn parse_single_volume(json: &serde_json::Value) -> Option<DockerVolume> {
-    // If it's a wrapper object with Volumes key (can happen in line-delimited sometimes)
-    if let Some(vols) = json["Volumes"].as_array() {
-        return None; // This case should be handled by the caller if they see a wrapper
-    }
-
     let name = json["Name"].as_str().unwrap_or("").to_string();
     if name.is_empty() {
         return None;
     }
 
+    let driver = json["Driver"].as_str().unwrap_or("").to_string();
+    let mountpoint = json["Mountpoint"].as_str().unwrap_or("").to_string();
+    let created = json["CreatedAt"].as_str().unwrap_or("").to_string();
+
     Some(DockerVolume {
         name,
-        driver: json["Driver"].as_str().unwrap_or("").to_string(),
-        mountpoint: json["Mountpoint"].as_str().unwrap_or("").to_string(),
-        created: json["CreatedAt"].as_str().unwrap_or("").to_string(),
+        driver,
+        mountpoint,
+        created,
     })
 }
 

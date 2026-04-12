@@ -4,7 +4,7 @@
   import { dockerStore } from '$lib/stores/docker.svelte';
   import { toastStore } from '$lib/stores/toasts.svelte';
   import { dockerService } from '$lib/services/docker.service';
-  import { sanitize, sanitizePorts } from '$lib/utils';
+  import { cn, sanitize, sanitizePorts } from '$lib/utils';
   import type { DockerImage, ImageHistoryEntry, CommandResult, DockerContainer } from '$lib/types';
 
   import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
@@ -285,7 +285,7 @@
     <div class="container py-6">
       {#if isLoading && images.length === 0}
         <div class="grid gap-4">
-          {#each Array(3) as _}
+          {#each Array(3) as i_}
             <Card.Root class="h-24 animate-pulse bg-muted/20" />
           {/each}
         </div>
@@ -296,8 +296,8 @@
           sortDesc={sortDesc}
           onSort={toggleSort}
           onCopy={copyToClipboard}
-          {onRun}
-          {onTag}
+          {openRun}
+          {openTag}
           onInspect={inspectImage}
           onHistory={viewHistory}
           onRemove={(img) => { imageToRemove = img; showConfirmRemove = true; }}

@@ -5,7 +5,7 @@
   import { toastStore } from '$lib/stores/toasts.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
   import { dockerService } from '$lib/services/docker.service';
-  import { sanitize, sanitizePorts } from '$lib/utils';
+  import { cn, sanitize, sanitizePorts } from '$lib/utils';
   import type { DockerContainer, DockerImage, CommandResult } from '$lib/types';
 
   import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
@@ -334,7 +334,7 @@
         </Button>
         <Button size="sm" onclick={() => showCreateModal = true}>
           <Plus class="h-4 w-4 mr-2" />
-          {i18n.t('NewContainer')}
+          {i18n.t('Container')}
         </Button>
         <Button variant="destructive" size="sm" onclick={() => showConfirmPrune = true}>
           <Trash2 class="h-4 w-4 mr-2" />
@@ -350,7 +350,7 @@
           <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder={i18n.t('SearchContainers')}
+            placeholder={i18n.t('Search')}
             class="pl-9"
             bind:value={searchInput}
           />
@@ -382,7 +382,7 @@
     <div class="container py-6">
       {#if isLoading && containers.length === 0}
         <div class="grid gap-4">
-          {#each Array(3) as _}
+          {#each Array(3) as i_}
             <Card.Root class="h-32 animate-pulse bg-muted/20" />
           {/each}
         </div>

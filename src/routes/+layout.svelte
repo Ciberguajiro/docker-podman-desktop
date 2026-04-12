@@ -130,7 +130,7 @@
       <div
         in:fly={{ y: 10, duration: 200, delay: 200 }}
         out:fade={{ duration: 200 }}
-        class="absolute inset-0 overflow-auto"
+        class="absolute inset-0 overflow-auto p-3"
       >
         {@render children()}
       </div>
