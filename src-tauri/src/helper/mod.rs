@@ -1,3 +1,4 @@
+pub mod cli;
 use crate::types::{
     CommandResult, ContainerFile, ContainerStats, DockerContainer, DockerImage, DockerNetwork,
     DockerVolume, Engine, ImageHistoryEntry,

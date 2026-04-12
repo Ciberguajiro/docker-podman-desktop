@@ -55,6 +55,7 @@ pub fn run() {
             docker_container_read_file,
             docker_container_write_file,
             get_system_metrics,
+            run_elevated_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
