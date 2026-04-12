@@ -7,6 +7,7 @@
   import { i18n } from "$lib/stores/i18n.svelte";
   import { settingsStore } from "$lib/stores/settings.svelte";
   import { dockerStore } from "$lib/stores/docker.svelte";
+  import { Button } from "$lib/components/ui/button";
 
   let { children } = $props();
 
@@ -46,94 +47,90 @@
 </script>
 
 <div
-  class="flex h-screen w-screen overflow-hidden bg-base-300 text-base-content"
-  data-theme={settingsStore.value.theme}
+  class="flex h-screen w-screen overflow-hidden bg-background text-foreground"
+  class:dark={settingsStore.value.theme === 'dark'}
 >
   <Sidebar
     dockerRunning={dockerStore.isRunning}
     dockerInfo={dockerStore.info}
   />
 
-  <main class="flex-1 overflow-auto bg-base-100 relative">
+  <main class="flex-1 overflow-auto bg-background relative">
     {#if !dockerStore.isCliInstalled}
-      <div in:fade={{ duration: 200 }} class="hero min-h-full bg-base-200">
-        <div class="hero-content text-center">
-          <div class="max-w-md">
-            <div class="text-6xl mb-5">🚫</div>
-            <h1 class="text-3xl font-bold">Docker CLI not found</h1>
-            <p class="py-6">
-              Please install Docker CLI to use this application.
-            </p>
-            <button
-              class="btn btn-primary"
-              onclick={() => dockerStore.checkStatus()}>Retry</button
-            >
-          </div>
-        </div>
+      <div in:fade={{ duration: 200 }} class="flex flex-col items-center justify-center min-h-full p-6 text-center">
+        <div class="text-6xl mb-6">🚫</div>
+        <h1 class="text-3xl font-bold tracking-tight mb-2">Docker CLI not found</h1>
+        <p class="text-muted-foreground mb-8 max-w-md">
+          Please install Docker CLI to use this application.
+        </p>
+        <Button
+          size="lg"
+          onclick={() => dockerStore.checkStatus()}
+        >
+          Retry
+        </Button>
       </div>
     {:else if !dockerStore.selectedEngine}
-      <div in:fade={{ duration: 200 }} class="hero min-h-full bg-base-200">
-        <div class="hero-content text-center">
-          <div class="max-w-md">
-            <div class="text-6xl mb-5">🚀</div>
-            <h1 class="text-3xl font-bold">{i18n.t("Welcome")}</h1>
-            <p class="py-6">{i18n.t("SelectEngineMessage")}</p>
-            <div class="flex gap-4 justify-center">
-              <button
-                class="btn btn-primary"
-                onclick={() => (dockerStore.selectedEngine = "docker")}
-                >Docker</button
-              >
-              <button
-                class="btn btn-secondary"
-                onclick={() => (dockerStore.selectedEngine = "podman")}
-                >Podman</button
-              >
-            </div>
-          </div>
+      <div in:fade={{ duration: 200 }} class="flex flex-col items-center justify-center min-h-full p-6 text-center">
+        <div class="text-6xl mb-6">🚀</div>
+        <h1 class="text-3xl font-bold tracking-tight mb-2">{i18n.t("Welcome")}</h1>
+        <p class="text-muted-foreground mb-8 max-w-md">
+          {i18n.t("SelectEngineMessage")}
+        </p>
+        <div class="flex gap-4">
+          <Button
+            size="lg"
+            class="min-w-[120px]"
+            onclick={() => (dockerStore.selectedEngine = "docker")}
+          >
+            Docker
+          </Button>
+          <Button
+            variant="secondary"
+            size="lg"
+            class="min-w-[120px]"
+            onclick={() => (dockerStore.selectedEngine = "podman")}
+          >
+            Podman
+          </Button>
         </div>
       </div>
     {:else if !dockerStore.isRunning}
-      <div in:fade={{ duration: 200 }} class="hero min-h-full bg-base-200">
-        <div class="hero-content text-center">
-          <div class="max-w-md">
-            {#if dockerStore.dockerError
-              ?.toLowerCase()
-              .includes("permission denied")}
-              <div class="text-6xl mb-5">🔐</div>
-              <h1 class="text-3xl font-bold">{i18n.t("PermissionDenied")}</h1>
-              <p class="py-6">
-                {i18n.t("PermissionDeniedMessage")}
-                <br /><br />
-                <code class="bg-base-300 p-2 rounded"
-                  >sudo usermod -aG docker $USER</code
-                >
-                <br /><br />
-                {i18n.t("PermissionAdvice")}
-              </p>
-            {:else}
-              <div class="text-6xl mb-5">⚠️</div>
-              <h1 class="text-3xl font-bold">{i18n.t("DockerNotRunning")}</h1>
-              <p class="py-6">{i18n.t("DockerNotRunningMessage")}</p>
-              {#if dockerStore.dockerError}
-                <div class="alert alert-error mb-4">
-                  <span>{dockerStore.dockerError}</span>
-                </div>
-              {/if}
-            {/if}
-            <button
-              class="btn btn-primary"
-              onclick={() => dockerStore.checkStatus()}
-              >{i18n.t("Retry")}</button
-            >
+      <div in:fade={{ duration: 200 }} class="flex flex-col items-center justify-center min-h-full p-6 text-center">
+        {#if dockerStore.dockerError?.toLowerCase().includes("permission denied")}
+          <div class="text-6xl mb-6">🔐</div>
+          <h1 class="text-3xl font-bold tracking-tight mb-2">{i18n.t("PermissionDenied")}</h1>
+          <div class="text-muted-foreground mb-8 max-w-md space-y-4">
+            <p>{i18n.t("PermissionDeniedMessage")}</p>
+            <div class="bg-muted p-3 rounded-md font-mono text-sm border">
+              sudo usermod -aG docker $USER
+            </div>
+            <p>{i18n.t("PermissionAdvice")}</p>
           </div>
-        </div>
+        {:else}
+          <div class="text-6xl mb-6">⚠️</div>
+          <h1 class="text-3xl font-bold tracking-tight mb-2">{i18n.t("DockerNotRunning")}</h1>
+          <p class="text-muted-foreground mb-8 max-w-md">
+            {i18n.t("DockerNotRunningMessage")}
+          </p>
+          {#if dockerStore.dockerError}
+            <div class="bg-destructive/10 text-destructive border border-destructive/20 p-4 rounded-md mb-8 max-w-md text-sm font-medium">
+              {dockerStore.dockerError}
+            </div>
+          {/if}
+        {/if}
+        <Button
+          size="lg"
+          onclick={() => dockerStore.checkStatus()}
+        >
+          {i18n.t("Retry")}
+        </Button>
       </div>
     {:else}
       <div
         in:fly={{ y: 10, duration: 200, delay: 200 }}
         out:fade={{ duration: 200 }}
-        class="absolute inset-0 overflow-auto p-0"
+        class="absolute inset-0 overflow-auto"
       >
         {@render children()}
       </div>
