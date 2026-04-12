@@ -186,7 +186,7 @@
         <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           type="search"
-          placeholder={i18n.t('SearchVolumes') || 'Search volumes...'}
+          placeholder={i18n.t('Search') || 'Search volumes...'}
           class="pl-9"
           bind:value={searchInput}
         />
@@ -199,7 +199,7 @@
     <div class="container py-6">
       {#if isLoading && volumes.length === 0}
         <div class="grid gap-4">
-          {#each Array(3) as _}
+          {#each Array(3) as i}
             <Card.Root class="h-24 animate-pulse bg-muted/20" />
           {/each}
         </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { View, type DockerInfo } from '/types';
-  import { i18n } from '/stores/i18n.svelte';
-  import { dockerStore } from '/stores/docker.svelte';
+  import { View, type DockerInfo } from '@lib/types';
+  import { i18n } from '@lib/stores/i18n.svelte';
+  import { dockerStore } from '@lib/stores/docker.svelte';
   import * as Select from "$lib/components/ui/select";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";

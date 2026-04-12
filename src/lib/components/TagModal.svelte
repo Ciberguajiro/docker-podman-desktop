@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { invoke } from '$lib/tauri';
   import { dockerStore } from '$lib/stores/docker.svelte';
   import { toastStore } from '$lib/stores/toasts.svelte';
   import { sanitize } from '$lib/utils';
