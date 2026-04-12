@@ -1,0 +1,902 @@
+$ svelte-kit sync && svelte-check --tsconfig ./tsconfig.json
+You have specified a baseUrl and/or paths in your tsconfig.json which interferes with SvelteKit's auto-generated tsconfig.json. Remove it to avoid problems with intellisense. For path aliases, use `kit.alias` instead: https://svelte.dev/docs/kit/configuration#alias
+Loading svelte-check in workspace: /app
+Getting Svelte diagnostics...
+
+/app/vite.config.js:6:1
+Error: Unused '@ts-expect-error' directive.
+
+// @ts-expect-error process is a nodejs global
+const host = process.env.TAURI_DEV_HOST;
+
+/app/src/lib/tauri.ts:5:48
+Error: Property '__TAURI_INTERNALS__' does not exist on type 'Window & typeof globalThis'.
+export async function invoke<T>(cmd: string, args: Record<string, any> = {}): Promise<T> {
+  if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__) {
+    console.warn(`Tauri not detected. Mocking response for ${cmd}`);
+
+/app/src/lib/tauri.ts:55:48
+Error: Property '__TAURI_INTERNALS__' does not exist on type 'Window & typeof globalThis'.
+export async function listen<T>(event: string, handler: (event: { payload: T }) => void): Promise<UnlistenFn> {
+  if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__) {
+    console.warn(`Tauri not detected. Mocking listener for ${event}`);
+
+/app/src/lib/components/PullModal.svelte:13:26
+Warn: This reference only captures the initial value of `image`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally (svelte)
+
+  let imageName = $state(image);
+  let isPulling = $state(false);
+
+/app/src/lib/components/Sidebar.svelte:2:41
+Error: Cannot find module '/types' or its corresponding type declarations. (ts)
+<script lang="ts">
+  import { View, type DockerInfo } from '/types';
+  import { i18n } from '/stores/i18n.svelte';
+
+/app/src/lib/components/Sidebar.svelte:3:24
+Error: Cannot find module '/stores/i18n.svelte' or its corresponding type declarations. (ts)
+  import { View, type DockerInfo } from '/types';
+  import { i18n } from '/stores/i18n.svelte';
+  import { dockerStore } from '/stores/docker.svelte';
+
+/app/src/lib/components/Sidebar.svelte:4:31
+Error: Cannot find module '/stores/docker.svelte' or its corresponding type declarations. (ts)
+  import { i18n } from '/stores/i18n.svelte';
+  import { dockerStore } from '/stores/docker.svelte';
+  import * as Select from "$lib/components/ui/select";
+
+/app/src/routes/containers/components/ContainerActions.svelte:15:10
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+    Trash2
+  } from "lucide-svelte";
+
+/app/src/routes/containers/components/ContainerActions.svelte:44:19
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+      <Tooltip.Trigger asChild>
+        {#snippet children({ builder })}
+          <Button variant="ghost" size="icon" class="h-8 w-8 text-green-600" builders={[builder]} onclick={() => onStart(container.id)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:44:30
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+      <Tooltip.Trigger asChild>
+        {#snippet children({ builder })}
+          <Button variant="ghost" size="icon" class="h-8 w-8 text-green-600" builders={[builder]} onclick={() => onStart(container.id)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:45:78
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+        {#snippet children({ builder })}
+          <Button variant="ghost" size="icon" class="h-8 w-8 text-green-600" builders={[builder]} onclick={() => onStart(container.id)}>
+            <Play class="h-4 w-4" />
+
+/app/src/routes/containers/components/ContainerActions.svelte:50:32
+Error: Argument of type '"Start"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+      </Tooltip.Trigger>
+      <Tooltip.Content>{i18n.t('Start')}</Tooltip.Content>
+    </Tooltip.Root>
+
+/app/src/routes/containers/components/ContainerActions.svelte:55:19
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+      <Tooltip.Trigger asChild>
+        {#snippet children({ builder })}
+          <Button variant="ghost" size="icon" class="h-8 w-8 text-amber-600" builders={[builder]} onclick={() => onStop(container.id)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:55:30
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+      <Tooltip.Trigger asChild>
+        {#snippet children({ builder })}
+          <Button variant="ghost" size="icon" class="h-8 w-8 text-amber-600" builders={[builder]} onclick={() => onStop(container.id)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:56:78
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+        {#snippet children({ builder })}
+          <Button variant="ghost" size="icon" class="h-8 w-8 text-amber-600" builders={[builder]} onclick={() => onStop(container.id)}>
+            <Square class="h-4 w-4" />
+
+/app/src/routes/containers/components/ContainerActions.svelte:61:32
+Error: Argument of type '"Stop"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+      </Tooltip.Trigger>
+      <Tooltip.Content>{i18n.t('Stop')}</Tooltip.Content>
+    </Tooltip.Root>
+
+/app/src/routes/containers/components/ContainerActions.svelte:67:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} disabled={container.state !== 'running'} onclick={() => onExec(container)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:67:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} disabled={container.state !== 'running'} onclick={() => onExec(container)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:68:61
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} disabled={container.state !== 'running'} onclick={() => onExec(container)}>
+          <Terminal class="h-4 w-4" />
+
+/app/src/routes/containers/components/ContainerActions.svelte:78:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} disabled={container.state !== 'running'} onclick={() => onFiles(container)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:78:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} disabled={container.state !== 'running'} onclick={() => onFiles(container)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:79:61
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} disabled={container.state !== 'running'} onclick={() => onFiles(container)}>
+          <Folder class="h-4 w-4" />
+
+/app/src/routes/containers/components/ContainerActions.svelte:89:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onLogs(container)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:89:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onLogs(container)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:90:61
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onLogs(container)}>
+          <ScrollText class="h-4 w-4" />
+
+/app/src/routes/containers/components/ContainerActions.svelte:100:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onExport(container)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:100:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onExport(container)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:101:61
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onExport(container)}>
+          <ExternalLink class="h-4 w-4" />
+
+/app/src/routes/containers/components/ContainerActions.svelte:111:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(container)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:111:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(container)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:112:61
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(container)}>
+          <Search class="h-4 w-4" />
+
+/app/src/routes/containers/components/ContainerActions.svelte:122:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(container)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:122:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(container)}>
+
+/app/src/routes/containers/components/ContainerActions.svelte:123:101
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(container)}>
+          <Trash2 class="h-4 w-4" />
+
+/app/src/routes/containers/components/ContainerTable.svelte:9:48
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+  import ContainerActions from './ContainerActions.svelte';
+  import { Copy, ChevronUp, ChevronDown } from "lucide-svelte";
+
+/app/src/routes/containers/components/ComposeGroup.svelte:7:49
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+  import ContainerTable from './ContainerTable.svelte';
+  import { Boxes, Play, RotateCw, Square } from "lucide-svelte";
+
+/app/src/routes/containers/+page.svelte:27:25
+Error: Cannot find module '$lib/components/ui/label' or its corresponding type declarations. (ts)
+  import { Checkbox } from "$lib/components/ui/checkbox";
+  import { Label } from "$lib/components/ui/label";
+
+/app/src/routes/containers/+page.svelte:40:10
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+    Box
+  } from "lucide-svelte";
+
+/app/src/routes/containers/+page.svelte:332:29
+Error: Cannot find name 'cn'. (ts)
+        <Button variant="outline" size="sm" onclick={loadContainers} disabled={isLoading}>
+          <RefreshCw class={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+          {i18n.t('Refresh')}
+
+/app/src/routes/containers/+page.svelte:337:19
+Error: Argument of type '"NewContainer"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+          <Plus class="h-4 w-4 mr-2" />
+          {i18n.t('NewContainer')}
+        </Button>
+
+/app/src/routes/containers/+page.svelte:353:33
+Error: Argument of type '"SearchContainers"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+            type="search"
+            placeholder={i18n.t('SearchContainers')}
+            class="pl-9"
+
+/app/src/routes/containers/+page.svelte:366:48
+Error: Argument of type '"AllStatuses"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+              <Filter class="h-3.5 w-3.5 mr-2" />
+              {statusFilter === 'all' ? i18n.t('AllStatuses') : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
+            </Select.Trigger>
+
+/app/src/routes/containers/+page.svelte:369:48
+Error: Argument of type '"AllStatuses"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+            <Select.Content>
+              <Select.Item value="all">{i18n.t('AllStatuses')}</Select.Item>
+              <Select.Item value="running">{i18n.t('Running')}</Select.Item>
+
+/app/src/routes/containers/+page.svelte:371:51
+Error: Argument of type '"Exited"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+              <Select.Item value="running">{i18n.t('Running')}</Select.Item>
+              <Select.Item value="exited">{i18n.t('Exited')}</Select.Item>
+              <Select.Item value="created">{i18n.t('Created')}</Select.Item>
+
+/app/src/routes/containers/+page.svelte:395:14
+Error: Cannot find name 'onComposeUp'. Did you mean 'composeUp'? (ts)
+            containers={groupContainers}
+            {onComposeUp}
+            {onComposeRestart}
+
+/app/src/routes/containers/+page.svelte:396:14
+Error: Cannot find name 'onComposeRestart'. Did you mean 'composeRestart'? (ts)
+            {onComposeUp}
+            {onComposeRestart}
+            {onComposeDown}
+
+/app/src/routes/containers/+page.svelte:397:14
+Error: Cannot find name 'onComposeDown'. Did you mean 'composeDown'? (ts)
+            {onComposeRestart}
+            {onComposeDown}
+            sortCol={sortCol}
+
+/app/src/routes/containers/+page.svelte:419:25
+Error: Argument of type '"StandaloneContainers"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+              <h2 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                {i18n.t('StandaloneContainers')}
+              </h2>
+
+/app/src/routes/containers/+page.svelte:504:1
+Error: Object literal may only specify known properties, and 'children' does not exist in type '$$ComponentProps'. (ts)
+<ConfirmationModal
+  title={i18n.t('NewContainer')}
+  message=""
+
+/app/src/routes/containers/+page.svelte:504:17
+Error: Argument of type '"NewContainer"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+<ConfirmationModal
+  title={i18n.t('NewContainer')}
+  message=""
+
+/app/src/routes/containers/+page.svelte:523:33
+Error: Argument of type '"EnvironmentVariables"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+    <div class="grid gap-2">
+      <Label for="envs">{i18n.t('EnvironmentVariables')}</Label>
+      <Input id="envs" bind:value={newEnvs} placeholder="e.g. KEY=VAL, DEBUG=true" />
+
+/app/src/routes/containers/+page.svelte:551:17
+Error: Argument of type '"ConfirmRemove"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+<ConfirmationModal
+  title={i18n.t('ConfirmRemove')}
+  message={`${i18n.t('ConfirmRemoveMessage')} "${containerToRemove.name}"?`}
+
+/app/src/routes/containers/+page.svelte:552:22
+Error: Argument of type '"ConfirmRemoveMessage"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+  title={i18n.t('ConfirmRemove')}
+  message={`${i18n.t('ConfirmRemoveMessage')} "${containerToRemove.name}"?`}
+  onConfirm={removeContainer}
+
+/app/src/routes/containers/+page.svelte:554:3
+Error: Object literal may only specify known properties, and '"onCancel"' does not exist in type '$$ComponentProps'. (ts)
+  onConfirm={removeContainer}
+  onCancel={() => showConfirmRemove = false}
+  confirmText={i18n.t('Remove')}
+
+/app/src/routes/containers/+page.svelte:563:17
+Error: Argument of type '"ConfirmPrune"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+<ConfirmationModal
+  title={i18n.t('ConfirmPrune')}
+  message={i18n.t('ConfirmPruneMessage')}
+
+/app/src/routes/containers/+page.svelte:564:19
+Error: Argument of type '"ConfirmPruneMessage"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+  title={i18n.t('ConfirmPrune')}
+  message={i18n.t('ConfirmPruneMessage')}
+  onConfirm={pruneContainers}
+
+/app/src/routes/containers/+page.svelte:566:3
+Error: Object literal may only specify known properties, and '"onCancel"' does not exist in type '$$ComponentProps'. (ts)
+  onConfirm={pruneContainers}
+  onCancel={() => showConfirmPrune = false}
+  confirmText={i18n.t('Prune')}
+
+/app/src/routes/containers/+page.svelte:575:1
+Error: Object literal may only specify known properties, and 'children' does not exist in type '$$ComponentProps'. (ts)
+<ConfirmationModal
+  title={i18n.t('ExportContainer')}
+  message=""
+
+/app/src/routes/containers/+page.svelte:575:17
+Error: Argument of type '"ExportContainer"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+<ConfirmationModal
+  title={i18n.t('ExportContainer')}
+  message=""
+
+/app/src/routes/containers/+page.svelte:581:38
+Error: Argument of type '"ExportPath"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+  <div class="grid gap-2 py-4">
+    <Label for="export-path">{i18n.t('ExportPath')}</Label>
+    <Input id="export-path" bind:value={exportPath} placeholder="container_export.tar" />
+
+/app/src/routes/containers/+page.svelte:592:3
+Error: Object literal may only specify known properties, and '"onClose"' does not exist in type '$$ComponentProps'. (ts)
+  data={inspectData}
+  onClose={() => showInspectModal = false}
+/>
+
+/app/src/routes/containers/+page.svelte:600:3
+Error: Object literal may only specify known properties, and '"onClose"' does not exist in type '$$ComponentProps'. (ts)
+  containerName={execName}
+  onClose={() => showExecModal = false}
+/>
+
+/app/src/routes/containers/+page.svelte:608:3
+Error: Object literal may only specify known properties, and '"onClose"' does not exist in type '$$ComponentProps'. (ts)
+  containerName={logsName}
+  onClose={() => showLogsModal = false}
+/>
+
+/app/src/routes/containers/+page.svelte:616:3
+Error: Object literal may only specify known properties, and '"onClose"' does not exist in type '$$ComponentProps'. (ts)
+  containerName={filesName}
+  onClose={() => showFilesModal = false}
+/>
+
+/app/src/routes/images/components/ImageActions.svelte:12:10
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+    Trash2
+  } from "lucide-svelte";
+
+/app/src/routes/images/components/ImageActions.svelte:34:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-green-600" builders={[builder]} onclick={() => onRun(image)}>
+
+/app/src/routes/images/components/ImageActions.svelte:34:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-green-600" builders={[builder]} onclick={() => onRun(image)}>
+
+/app/src/routes/images/components/ImageActions.svelte:35:76
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-green-600" builders={[builder]} onclick={() => onRun(image)}>
+          <Play class="h-4 w-4" />
+
+/app/src/routes/images/components/ImageActions.svelte:45:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onTag(image)}>
+
+/app/src/routes/images/components/ImageActions.svelte:45:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onTag(image)}>
+
+/app/src/routes/images/components/ImageActions.svelte:46:61
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onTag(image)}>
+          <Tag class="h-4 w-4" />
+
+/app/src/routes/images/components/ImageActions.svelte:56:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(image)}>
+
+/app/src/routes/images/components/ImageActions.svelte:56:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(image)}>
+
+/app/src/routes/images/components/ImageActions.svelte:57:61
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(image)}>
+          <Search class="h-4 w-4" />
+
+/app/src/routes/images/components/ImageActions.svelte:67:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onHistory(image)}>
+
+/app/src/routes/images/components/ImageActions.svelte:67:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onHistory(image)}>
+
+/app/src/routes/images/components/ImageActions.svelte:68:61
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onHistory(image)}>
+          <History class="h-4 w-4" />
+
+/app/src/routes/images/components/ImageActions.svelte:78:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(image)}>
+
+/app/src/routes/images/components/ImageActions.svelte:78:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(image)}>
+
+/app/src/routes/images/components/ImageActions.svelte:79:101
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(image)}>
+          <Trash2 class="h-4 w-4" />
+
+/app/src/routes/images/components/ImageTable.svelte:9:48
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+  import ImageActions from './ImageActions.svelte';
+  import { Copy, ChevronUp, ChevronDown } from "lucide-svelte";
+
+/app/src/routes/images/+page.svelte:22:25
+Error: Cannot find module '$lib/components/ui/label' or its corresponding type declarations. (ts)
+  import * as Select from "$lib/components/ui/select";
+  import { Label } from "$lib/components/ui/label";
+  import { Separator } from "$lib/components/ui/separator";
+
+/app/src/routes/images/+page.svelte:36:10
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+    Play
+  } from "lucide-svelte";
+
+/app/src/routes/images/+page.svelte:247:29
+Error: Cannot find name 'cn'. (ts)
+        <Button variant="outline" size="sm" onclick={loadImages} disabled={isLoading}>
+          <RefreshCw class={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+          {i18n.t('Refresh')}
+
+/app/src/routes/images/+page.svelte:275:31
+Error: Argument of type '"SearchImages"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+          type="search"
+          placeholder={i18n.t('SearchImages')}
+          class="pl-9"
+
+/app/src/routes/images/+page.svelte:299:12
+Error: Cannot find name 'onRun'. Did you mean 'openRun'? (ts)
+          onCopy={copyToClipboard}
+          {onRun}
+          {onTag}
+
+/app/src/routes/images/+page.svelte:300:12
+Error: Cannot find name 'onTag'. Did you mean 'openTag'? (ts)
+          {onRun}
+          {onTag}
+          onInspect={inspectImage}
+
+/app/src/routes/images/+page.svelte:324:12
+Error: Object literal may only specify known properties, and '"onClose"' does not exist in type '$$ComponentProps'. (ts)
+{#if showPullModal}
+<PullModal onClose={() => showPullModal = false} />
+{/if}
+
+/app/src/routes/images/+page.svelte:328:13
+Error: Object literal may only specify known properties, and '"onClose"' does not exist in type 'Props'. (ts)
+{#if showBuildModal}
+<BuildModal onClose={() => showBuildModal = false} />
+{/if}
+
+/app/src/routes/images/+page.svelte:333:3
+Error: Object literal may only specify known properties, and '"imageId"' does not exist in type '$$ComponentProps'. (ts)
+<TagModal
+  imageId={selectedImage.id}
+  repository={selectedImage.repository}
+
+/app/src/routes/images/+page.svelte:345:3
+Error: Object literal may only specify known properties, and '"onCancel"' does not exist in type '$$ComponentProps'. (ts)
+  onConfirm={removeImage}
+  onCancel={() => showConfirmRemove = false}
+  isDestructive={true}
+
+/app/src/routes/images/+page.svelte:356:3
+Error: Object literal may only specify known properties, and '"onCancel"' does not exist in type '$$ComponentProps'. (ts)
+  onConfirm={pruneImages}
+  onCancel={() => showConfirmPrune = false}
+  isDestructive={true}
+
+/app/src/routes/images/+page.svelte:366:3
+Error: Object literal may only specify known properties, and '"onClose"' does not exist in type '$$ComponentProps'. (ts)
+  data={inspectData}
+  onClose={() => showInspectModal = false}
+/>
+
+/app/src/routes/images/+page.svelte:372:1
+Error: Object literal may only specify known properties, and 'children' does not exist in type '$$ComponentProps'. (ts)
+<ConfirmationModal
+  title={i18n.t('Import')}
+  message=""
+
+/app/src/routes/images/+page.svelte:379:40
+Error: Argument of type '"Path"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+    <div class="grid gap-2">
+      <Label for="import-path">{i18n.t('Path')}*</Label>
+      <div class="flex gap-2">
+
+/app/src/routes/images/+page.svelte:398:1
+Error: Object literal may only specify known properties, and 'children' does not exist in type '$$ComponentProps'. (ts)
+<ConfirmationModal
+  title={`${i18n.t('Run')} Image: ${runImage}`}
+  message=""
+
+/app/src/routes/images/+page.svelte:441:1
+Error: Object literal may only specify known properties, and 'children' does not exist in type '$$ComponentProps'. (ts)
+<ConfirmationModal
+  title={`${i18n.t('History')}: ${selectedImage.repository}`}
+  message=""
+
+/app/src/routes/marketplaces/+page.svelte:73:35
+Error: Unexpected token
+https://svelte.dev/e/js_parse_error (svelte)
+        <Button type="submit" disabled={isLoading || !searchQuery}>
+          {isLoading ? <RefreshCw class="h-4 w-4 mr-2 animate-spin" /> : null}
+          {i18n.t('Search')}
+
+/app/src/routes/marketplaces/+page.svelte:73:35
+Error: Unexpected token
+https://svelte.dev/e/js_parse_error (ts)
+        <Button type="submit" disabled={isLoading || !searchQuery}>
+          {isLoading ? <RefreshCw class="h-4 w-4 mr-2 animate-spin" /> : null}
+          {i18n.t('Search')}
+
+/app/src/routes/metrics/+page.svelte:13:28
+Error: Cannot find module '$lib/components/ui/progress' or its corresponding type declarations. (ts)
+  import { Badge } from "$lib/components/ui/badge";
+  import { Progress } from "$lib/components/ui/progress"; // Note: Need to add progress component
+  import {
+
+/app/src/routes/metrics/+page.svelte:22:10
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+    RefreshCw
+  } from "lucide-svelte";
+  import { cn } from '$lib/utils';
+
+/app/src/routes/metrics/+page.svelte:148:21
+Error: Argument of type '"ContainerStats"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            {i18n.t('ContainerStats') || 'Container Performance'}
+          </h2>
+
+/app/src/routes/networks/components/NetworkActions.svelte:6:34
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+  import * as Tooltip from "$lib/components/ui/tooltip";
+  import { Search, Trash2 } from "lucide-svelte";
+
+/app/src/routes/networks/components/NetworkActions.svelte:22:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(network)}>
+
+/app/src/routes/networks/components/NetworkActions.svelte:22:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(network)}>
+
+/app/src/routes/networks/components/NetworkActions.svelte:23:61
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(network)}>
+          <Search class="h-4 w-4" />
+
+/app/src/routes/networks/components/NetworkActions.svelte:33:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(network)}>
+
+/app/src/routes/networks/components/NetworkActions.svelte:33:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(network)}>
+
+/app/src/routes/networks/components/NetworkActions.svelte:34:101
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(network)}>
+          <Trash2 class="h-4 w-4" />
+
+/app/src/routes/networks/components/NetworkTable.svelte:8:57
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+  import NetworkActions from './NetworkActions.svelte';
+  import { Copy, ChevronUp, ChevronDown, Network } from "lucide-svelte";
+
+/app/src/routes/networks/components/NetworkTable.svelte:43:21
+Error: Argument of type '"Driver"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+          <div class="flex items-center gap-1">
+            {i18n.t('Driver')}
+            {#if sortCol === 'driver'}
+
+/app/src/routes/networks/+page.svelte:16:25
+Error: Cannot find module '$lib/components/ui/label' or its corresponding type declarations. (ts)
+  import * as Select from "$lib/components/ui/select";
+  import { Label } from "$lib/components/ui/label";
+
+/app/src/routes/networks/+page.svelte:26:10
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+    Globe
+  } from "lucide-svelte";
+  import { cn } from '$lib/utils';
+
+/app/src/routes/networks/+page.svelte:176:19
+Error: Argument of type '"NewNetwork"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+          <Plus class="h-4 w-4 mr-2" />
+          {i18n.t('NewNetwork')}
+        </Button>
+
+/app/src/routes/networks/+page.svelte:191:31
+Error: Argument of type '"SearchNetworks"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+          type="search"
+          placeholder={i18n.t('SearchNetworks') || 'Search networks...'}
+          class="pl-9"
+
+/app/src/routes/networks/+page.svelte:238:1
+Error: Object literal may only specify known properties, and 'children' does not exist in type '$$ComponentProps'. (ts)
+<ConfirmationModal
+  title={i18n.t('NewNetwork')}
+  message=""
+
+/app/src/routes/networks/+page.svelte:238:17
+Error: Argument of type '"NewNetwork"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+<ConfirmationModal
+  title={i18n.t('NewNetwork')}
+  message=""
+
+/app/src/routes/networks/+page.svelte:249:43
+Error: Argument of type '"Driver"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+    <div class="grid gap-2">
+      <Label for="network-driver">{i18n.t('Driver')}</Label>
+      <Select.Root type="single" value={newNetworkDriver} onValueChange={v => newNetworkDriver = v || 'bridge'}>
+
+/app/src/routes/networks/+page.svelte:269:17
+Error: Argument of type '"ConfirmRemove"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+<ConfirmationModal
+  title={i18n.t('ConfirmRemove')}
+  message={`${i18n.t('ConfirmRemoveMessage')} "${networkToRemove.name}"?`}
+
+/app/src/routes/networks/+page.svelte:270:22
+Error: Argument of type '"ConfirmRemoveMessage"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+  title={i18n.t('ConfirmRemove')}
+  message={`${i18n.t('ConfirmRemoveMessage')} "${networkToRemove.name}"?`}
+  onConfirm={removeNetwork}
+
+/app/src/routes/networks/+page.svelte:272:3
+Error: Object literal may only specify known properties, and '"onCancel"' does not exist in type '$$ComponentProps'. (ts)
+  onConfirm={removeNetwork}
+  onCancel={() => showConfirmRemove = false}
+  isDestructive={true}
+
+/app/src/routes/networks/+page.svelte:280:17
+Error: Argument of type '"ConfirmPrune"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+<ConfirmationModal
+  title={i18n.t('ConfirmPrune')}
+  message={i18n.t('ConfirmPruneMessage')}
+
+/app/src/routes/networks/+page.svelte:281:19
+Error: Argument of type '"ConfirmPruneMessage"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+  title={i18n.t('ConfirmPrune')}
+  message={i18n.t('ConfirmPruneMessage')}
+  onConfirm={pruneNetworks}
+
+/app/src/routes/networks/+page.svelte:283:3
+Error: Object literal may only specify known properties, and '"onCancel"' does not exist in type '$$ComponentProps'. (ts)
+  onConfirm={pruneNetworks}
+  onCancel={() => showConfirmPrune = false}
+  isDestructive={true}
+
+/app/src/routes/networks/+page.svelte:293:3
+Error: Object literal may only specify known properties, and '"onClose"' does not exist in type '$$ComponentProps'. (ts)
+  data={inspectData}
+  onClose={() => showInspectModal = false}
+/>
+
+/app/src/routes/volumes/components/VolumeActions.svelte:6:34
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+  import * as Tooltip from "$lib/components/ui/tooltip";
+  import { Search, Trash2 } from "lucide-svelte";
+
+/app/src/routes/volumes/components/VolumeActions.svelte:22:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(volume)}>
+
+/app/src/routes/volumes/components/VolumeActions.svelte:22:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(volume)}>
+
+/app/src/routes/volumes/components/VolumeActions.svelte:23:61
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(volume)}>
+          <Search class="h-4 w-4" />
+
+/app/src/routes/volumes/components/VolumeActions.svelte:33:17
+Error: Type '({ builder }: { builder: any; }) => any' is not assignable to type 'Snippet<[]>'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(volume)}>
+
+/app/src/routes/volumes/components/VolumeActions.svelte:33:28
+Error: Binding element 'builder' implicitly has an 'any' type. (ts)
+    <Tooltip.Trigger asChild>
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(volume)}>
+
+/app/src/routes/volumes/components/VolumeActions.svelte:34:101
+Error: Object literal may only specify known properties, and '"builders"' does not exist in type 'HTMLButtonAttributes & { ref?: HTMLElement | null | undefined; } & HTMLAnchorAttributes & { variant?: "link" | "default" | ... 4 more ... | undefined; size?: "icon" | ... 7 more ... | undefined; }'. (ts)
+      {#snippet children({ builder })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(volume)}>
+          <Trash2 class="h-4 w-4" />
+
+/app/src/routes/volumes/components/VolumeTable.svelte:8:58
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+  import VolumeActions from './VolumeActions.svelte';
+  import { Copy, ChevronUp, ChevronDown, Database } from "lucide-svelte";
+
+/app/src/routes/volumes/components/VolumeTable.svelte:43:21
+Error: Argument of type '"Driver"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+          <div class="flex items-center gap-1">
+            {i18n.t('Driver')}
+            {#if sortCol === 'driver'}
+
+/app/src/routes/volumes/components/VolumeTable.svelte:49:66
+Error: Argument of type '"Mountpoint"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+        </Table.Head>
+        <Table.Head class="hidden md:table-cell w-[30%]">{i18n.t('Mountpoint')}</Table.Head>
+        <Table.Head class="hidden sm:table-cell w-[15%] cursor-pointer" onclick={() => onSort('created')}>
+
+/app/src/routes/volumes/+page.svelte:15:25
+Error: Cannot find module '$lib/components/ui/label' or its corresponding type declarations. (ts)
+  import * as Card from "$lib/components/ui/card";
+  import { Label } from "$lib/components/ui/label";
+
+/app/src/routes/volumes/+page.svelte:25:10
+Error: Cannot find module 'lucide-svelte' or its corresponding type declarations. (ts)
+    HardDrive
+  } from "lucide-svelte";
+  import { cn } from '$lib/utils';
+
+/app/src/routes/volumes/+page.svelte:174:19
+Error: Argument of type '"NewVolume"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+          <Plus class="h-4 w-4 mr-2" />
+          {i18n.t('NewVolume')}
+        </Button>
+
+/app/src/routes/volumes/+page.svelte:189:31
+Error: Argument of type '"SearchVolumes"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+          type="search"
+          placeholder={i18n.t('SearchVolumes') || 'Search volumes...'}
+          class="pl-9"
+
+/app/src/routes/volumes/+page.svelte:236:1
+Error: Object literal may only specify known properties, and 'children' does not exist in type '$$ComponentProps'. (ts)
+<ConfirmationModal
+  title={i18n.t('NewVolume')}
+  message=""
+
+/app/src/routes/volumes/+page.svelte:236:17
+Error: Argument of type '"NewVolume"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+<ConfirmationModal
+  title={i18n.t('NewVolume')}
+  message=""
+
+/app/src/routes/volumes/+page.svelte:250:17
+Error: Argument of type '"ConfirmRemove"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+<ConfirmationModal
+  title={i18n.t('ConfirmRemove')}
+  message={`${i18n.t('ConfirmRemoveMessage')} "${volumeToRemove.name}"?`}
+
+/app/src/routes/volumes/+page.svelte:251:22
+Error: Argument of type '"ConfirmRemoveMessage"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+  title={i18n.t('ConfirmRemove')}
+  message={`${i18n.t('ConfirmRemoveMessage')} "${volumeToRemove.name}"?`}
+  onConfirm={removeVolume}
+
+/app/src/routes/volumes/+page.svelte:253:3
+Error: Object literal may only specify known properties, and '"onCancel"' does not exist in type '$$ComponentProps'. (ts)
+  onConfirm={removeVolume}
+  onCancel={() => showConfirmRemove = false}
+  isDestructive={true}
+
+/app/src/routes/volumes/+page.svelte:261:17
+Error: Argument of type '"ConfirmPrune"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+<ConfirmationModal
+  title={i18n.t('ConfirmPrune')}
+  message={i18n.t('ConfirmPruneMessage')}
+
+/app/src/routes/volumes/+page.svelte:262:19
+Error: Argument of type '"ConfirmPruneMessage"' is not assignable to parameter of type '"Containers" | "Images" | "Volumes" | "Networks" | "Metrics" | "Marketplace" | "Settings" | "Refresh" | "Create" | "Language" | "Theme" | "Running" | "Stopped" | "Paused" | "Created" | ... 128 more ... | "SearchMarketplace"'. (ts)
+  title={i18n.t('ConfirmPrune')}
+  message={i18n.t('ConfirmPruneMessage')}
+  onConfirm={pruneVolumes}
+
+/app/src/routes/volumes/+page.svelte:264:3
+Error: Object literal may only specify known properties, and '"onCancel"' does not exist in type '$$ComponentProps'. (ts)
+  onConfirm={pruneVolumes}
+  onCancel={() => showConfirmPrune = false}
+  isDestructive={true}
+
+/app/src/routes/volumes/+page.svelte:274:3
+Error: Object literal may only specify known properties, and '"onClose"' does not exist in type '$$ComponentProps'. (ts)
+  data={inspectData}
+  onClose={() => showInspectModal = false}
+/>
+
+====================================
+svelte-check found 147 errors and 1 warning in 19 files
+error: script "check" exited with code 1

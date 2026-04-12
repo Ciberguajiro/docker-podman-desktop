@@ -1,192 +1,211 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { invoke, listen } from '$lib/tauri';
+  import { listen } from '$lib/tauri';
   import { i18n } from '$lib/stores/i18n.svelte';
   import { dockerStore } from '$lib/stores/docker.svelte';
-  import { toastStore } from '$lib/stores/toasts.svelte';
-  import type { AllMetrics, StatsEvent, ContainerStats } from '$lib/types';
+  import { dockerService } from '$lib/services/docker.service';
+  import type { ContainerStats, SystemMetrics, StatsEvent } from '$lib/types';
 
-  let metrics = $state<AllMetrics | null>(null);
+  import { Button } from "$lib/components/ui/button";
+  import * as Card from "$lib/components/ui/card";
+  import * as Table from "$lib/components/ui/table";
+  import { Badge } from "$lib/components/ui/badge";
+  import { Progress } from "$lib/components/ui/progress"; // Note: Need to add progress component
+  import {
+    Activity,
+    Cpu,
+    MemoryStick,
+    ArrowUpRight,
+    ArrowDownLeft,
+    Box,
+    RefreshCw
+  } from "lucide-svelte";
+  import { cn } from '$lib/utils';
+
+  let systemMetrics = $state<SystemMetrics | null>(null);
+  let containerStats = $state<ContainerStats[]>([]);
   let isLoading = $state(true);
-  let lastRefreshed = $state<Date | null>(null);
-  let unlistenStats: (() => void) | null = null;
-  let containerStatsMap = $state<Record<string, ContainerStats>>({});
+  let unlisten: (() => void) | null = null;
 
   async function loadMetrics() {
-    isLoading = true;
+    if (!dockerStore.selectedEngine) return;
     try {
-      const system = await invoke<any>('get_system_metrics');
-      if (Object.keys(containerStatsMap).length === 0) {
-          const containers = dockerStore.selectedEngine ? await dockerStore.invoke<any[]>('docker_container_stats') : [];
-          containers.forEach(c => { containerStatsMap[c.id] = c; });
-      }
-      metrics = { system, containers: Object.values(containerStatsMap) };
-      lastRefreshed = new Date();
+      const system = await dockerService.getSystemMetrics();
+      systemMetrics = system;
+
+      const containers = await dockerService.getContainerStats(dockerStore.selectedEngine);
+      containerStats = containers;
     } catch (e) {
       console.error('Failed to load metrics', e);
-      toastStore.error(`${i18n.t('Metrics')}: ${e}`);
     } finally {
       isLoading = false;
     }
   }
 
-  async function startStatsStream() {
+  async function startStreaming() {
     if (!dockerStore.selectedEngine) return;
-
-    if (unlistenStats) unlistenStats();
-
-    unlistenStats = await listen<StatsEvent>('stats-event', (event) => {
-      event.payload.stats.forEach(s => {
-        containerStatsMap[s.id] = s;
-      });
-      if (metrics) {
-        metrics.containers = Object.values(containerStatsMap);
-      }
-    });
-
     try {
-      await dockerStore.invoke('docker_stats_stream');
+      unlisten = await listen<StatsEvent>('docker-stats', (event) => {
+        containerStats = event.payload.stats;
+      });
+      await dockerService.streamStats(dockerStore.selectedEngine);
     } catch (e) {
-      console.error('Failed to start stats stream', e);
+      console.error('Failed to start streaming metrics', e);
     }
   }
-
-  async function stopStatsStream() {
-    if (unlistenStats) {
-      unlistenStats();
-      unlistenStats = null;
-    }
-    await dockerStore.invoke('docker_stop_stats_stream');
-  }
-
-  $effect(() => {
-    if (dockerStore.refreshCounter >= 0) {
-      loadMetrics();
-    }
-  });
 
   onMount(() => {
     loadMetrics();
-    startStatsStream();
+    startStreaming();
+
+    const interval = setInterval(loadMetrics, 5000);
+    return () => {
+      clearInterval(interval);
+      if (unlisten) unlisten();
+      if (dockerStore.selectedEngine) {
+        dockerService.stopStatsStream(dockerStore.selectedEngine);
+      }
+    };
   });
-
-  onDestroy(() => {
-    stopStatsStream();
-  });
-
-  const system = $derived(metrics?.system);
-  const containers = $derived(metrics?.containers || []);
-
-  const cpuUsage = $derived(system?.cpu_usage || []);
-  const avgCpu = $derived(cpuUsage.length ? (cpuUsage.reduce((a: number, b: number) => a + b, 0) / cpuUsage.length).toFixed(1) : '0');
-
-  const memUsedGB = $derived(system ? (system.mem_used / 1024 / 1024 / 1024).toFixed(2) : '0');
-  const memTotalGB = $derived(system ? (system.mem_total / 1024 / 1024 / 1024).toFixed(2) : '0');
 </script>
 
-<div class="p-6">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">{i18n.t('Metrics')}</h1>
-    <div class="flex flex-col items-end">
-      <button class="btn btn-outline btn-sm" onclick={loadMetrics} disabled={isLoading}>
-        {#if isLoading}
-          <span class="loading loading-spinner loading-xs"></span>
-        {/if}
-        🔄 {i18n.t('Refresh')}
-      </button>
-      {#if lastRefreshed}
-        <span class="text-[10px] opacity-50 mt-1">{i18n.t('LastUpdated')}: {lastRefreshed.toLocaleTimeString()}</span>
-      {/if}
+<div class="h-full flex flex-col bg-background">
+  <!-- Header -->
+  <header class="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+    <div class="container flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-primary/10 rounded-lg">
+          <Activity class="h-6 w-6 text-primary" />
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight">{i18n.t('Metrics')}</h1>
+          <p class="text-xs text-muted-foreground flex items-center gap-2">
+            Real-time engine and container performance
+          </p>
+        </div>
+      </div>
+      <Button variant="outline" size="sm" onclick={loadMetrics} disabled={isLoading}>
+        <RefreshCw class={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+        {i18n.t('Refresh')}
+      </Button>
+    </div>
+  </header>
+
+  <div class="flex-1 overflow-auto">
+    <div class="container py-6 space-y-8">
+      <!-- System Overview -->
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card.Root>
+          <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card.Title class="text-sm font-medium">CPU Usage</Card.Title>
+            <Cpu class="h-4 w-4 text-muted-foreground" />
+          </Card.Header>
+          <Card.Content>
+            <div class="text-2xl font-bold">
+              {systemMetrics ? (systemMetrics.cpu_usage.reduce((a, b) => a + b, 0) / systemMetrics.cpu_usage.length).toFixed(1) : '0'}%
+            </div>
+            <p class="text-xs text-muted-foreground mt-1">
+              Overall system CPU load
+            </p>
+          </Card.Content>
+        </Card.Root>
+
+        <Card.Root>
+          <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card.Title class="text-sm font-medium">Memory Usage</Card.Title>
+            <MemoryStick class="h-4 w-4 text-muted-foreground" />
+          </Card.Header>
+          <Card.Content>
+            <div class="text-2xl font-bold">
+              {systemMetrics ? systemMetrics.mem_percent.toFixed(1) : '0'}%
+            </div>
+            <div class="text-xs text-muted-foreground mt-1">
+              {systemMetrics ? (systemMetrics.mem_used / 1024 / 1024 / 1024).toFixed(1) : '0'} GB /
+              {systemMetrics ? (systemMetrics.mem_total / 1024 / 1024 / 1024).toFixed(1) : '0'} GB
+            </div>
+          </Card.Content>
+        </Card.Root>
+
+        <Card.Root>
+          <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card.Title class="text-sm font-medium">Containers</Card.Title>
+            <Box class="h-4 w-4 text-muted-foreground" />
+          </Card.Header>
+          <Card.Content>
+            <div class="text-2xl font-bold">{containerStats.length}</div>
+            <p class="text-xs text-muted-foreground mt-1">
+              Active containers monitored
+            </p>
+          </Card.Content>
+        </Card.Root>
+      </div>
+
+      <!-- Container Stats Table -->
+      <div class="space-y-4">
+        <div class="flex items-center gap-2 px-1">
+          <Activity class="h-4 w-4 text-muted-foreground" />
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            {i18n.t('ContainerStats') || 'Container Performance'}
+          </h2>
+        </div>
+
+        <div class="rounded-md border bg-card overflow-hidden">
+          <Table.Root>
+            <Table.Header>
+              <Table.Row>
+                <Table.Head class="w-[25%]">{i18n.t('Name')}</Table.Head>
+                <Table.Head class="w-[15%]">CPU %</Table.Head>
+                <Table.Head class="w-[20%]">MEM Usage / Limit</Table.Head>
+                <Table.Head class="w-[10%]">MEM %</Table.Head>
+                <Table.Head class="w-[15%]">NET I/O</Table.Head>
+                <Table.Head class="w-[15%]">BLOCK I/O</Table.Head>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {#each containerStats as stat (stat.id)}
+                <Table.Row>
+                  <Table.Cell>
+                    <div class="font-bold truncate">{stat.name}</div>
+                    <code class="text-[10px] text-muted-foreground font-mono">{stat.id.slice(0, 12)}</code>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-medium w-10">{stat.cpu_percent}</span>
+                    </div>
+                  </Table.Cell>
+                  <Table.Cell class="text-xs">
+                    {stat.mem_usage} / {stat.mem_limit}
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Badge variant="outline" class="text-[10px]">{stat.mem_percent}</Badge>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <div class="flex flex-col gap-0.5">
+                      <span class="text-[10px] flex items-center gap-1"><ArrowDownLeft class="h-2 w-2 text-blue-500" /> {stat.net_io.split(' / ')[0]}</span>
+                      <span class="text-[10px] flex items-center gap-1"><ArrowUpRight class="h-2 w-2 text-amber-500" /> {stat.net_io.split(' / ')[1]}</span>
+                    </div>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <span class="text-[10px] font-mono text-muted-foreground">{stat.block_io}</span>
+                  </Table.Cell>
+                </Table.Row>
+              {/each}
+              {#if containerStats.length === 0}
+                <Table.Row>
+                  <Table.Cell colspan={6} class="h-32 text-center text-muted-foreground">
+                    {#if isLoading}
+                      <RefreshCw class="h-6 w-6 animate-spin mx-auto mb-2 opacity-20" />
+                      Loading stats...
+                    {:else}
+                      No active containers to monitor.
+                    {/if}
+                  </Table.Cell>
+                </Table.Row>
+              {/if}
+            </Table.Body>
+          </Table.Root>
+        </div>
+      </div>
     </div>
   </div>
-
-  {#if isLoading && !system}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      <div class="card bg-base-200 shadow-xl border border-base-300">
-        <div class="card-body">
-          <div class="skeleton h-6 w-1/3 mb-4"></div>
-          <div class="skeleton h-12 w-1/2 mb-4"></div>
-          <div class="flex flex-wrap gap-1">
-            {#each Array(8) as _}
-              <div class="skeleton w-8 h-2 rounded"></div>
-            {/each}
-          </div>
-        </div>
-      </div>
-      <div class="card bg-base-200 shadow-xl border border-base-300">
-        <div class="card-body">
-          <div class="skeleton h-6 w-1/3 mb-4"></div>
-          <div class="skeleton h-12 w-1/2 mb-4"></div>
-          <div class="skeleton h-4 w-full"></div>
-        </div>
-      </div>
-    </div>
-    <div class="skeleton h-8 w-1/4 mb-4"></div>
-    <div class="bg-base-200 rounded-lg shadow overflow-hidden">
-      <div class="p-4 space-y-2">
-        {#each Array(5) as _}
-          <div class="skeleton h-10 w-full"></div>
-        {/each}
-      </div>
-    </div>
-  {:else}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      <div class="card bg-base-200 shadow-xl border border-base-300">
-        <div class="card-body">
-          <h2 class="card-title text-primary">{i18n.t('CPUUsage')}</h2>
-          <div class="text-5xl font-bold my-4">{avgCpu}%</div>
-          <div class="flex flex-wrap gap-1">
-            {#each cpuUsage as cpu, i}
-              <div class="w-8 h-2 bg-base-300 rounded overflow-hidden">
-                <div class="h-full bg-primary" style="width: {cpu}%"></div>
-              </div>
-            {/each}
-          </div>
-          <p class="text-sm opacity-50 mt-2">{cpuUsage.length} {i18n.t('Cores')}</p>
-        </div>
-      </div>
-
-      <div class="card bg-base-200 shadow-xl border border-base-300">
-        <div class="card-body">
-          <h2 class="card-title text-secondary">{i18n.t('MemoryUsage')}</h2>
-          <div class="text-5xl font-bold my-4">{system?.mem_percent?.toFixed(1) ?? '0'}%</div>
-          <progress class="progress progress-secondary w-full" value={system?.mem_percent ?? 0} max="100"></progress>
-          <p class="text-sm opacity-50 mt-2">{memUsedGB} GB / {memTotalGB} GB</p>
-        </div>
-      </div>
-    </div>
-
-    <h2 class="text-2xl font-bold mb-4">{i18n.t('ContainerMetrics')}</h2>
-    <div class="overflow-x-auto bg-base-200 rounded-lg shadow">
-      <table class="table table-zebra w-full">
-        <thead>
-          <tr>
-            <th>{i18n.t('Container')}</th>
-            <th>{i18n.t('CPUPerc')}</th>
-            <th>{i18n.t('MemPerc')}</th>
-            <th>{i18n.t('MemUsageLimit')}</th>
-            <th>{i18n.t('NetIO')}</th>
-            <th>{i18n.t('BlockIO')}</th>
-            <th>{i18n.t('PIDs')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each containers as c (c.id)}
-            <tr>
-              <td>
-                <div class="font-bold">{c.name}</div>
-                <div class="text-xs opacity-50 font-mono">{c.id.slice(0, 12)}</div>
-              </td>
-              <td class="font-mono">{c.cpu_percent}</td>
-              <td class="font-mono">{c.mem_percent}</td>
-              <td class="font-mono">{c.mem_usage} / {c.mem_limit}</td>
-              <td class="font-mono">{c.net_io}</td>
-              <td class="font-mono">{c.block_io}</td>
-              <td class="font-mono">{c.pids}</td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-  {/if}
 </div>

@@ -1,5 +1,6 @@
 import type { DockerInfo, DockerEvent, Engine } from '../types';
-import { invoke, listen } from '../tauri';
+import { listen, invoke as tauriInvoke } from '../tauri';
+import { dockerService } from '../services/docker.service';
 
 function createDockerStore() {
   let selectedEngine = $state<Engine | null>(null);
@@ -35,13 +36,13 @@ function createDockerStore() {
     }
 
     try {
-      isCliInstalled = await invoke<boolean>('check_engine_cli_command', { engine: selectedEngine });
+      isCliInstalled = await dockerService.checkEngineCli(selectedEngine);
       if (isCliInstalled) {
-        const res = await invoke<{ success: boolean; error?: string }>('docker_is_running', { engine: selectedEngine });
+        const res = await dockerService.isRunning(selectedEngine);
         isRunning = res.success;
         dockerError = res.error || null;
         if (isRunning) {
-          info = await invoke<DockerInfo>('docker_info', { engine: selectedEngine });
+          info = await dockerService.getInfo(selectedEngine);
           if (listeningEngine !== selectedEngine) {
             listenToEvents();
           }
@@ -68,7 +69,7 @@ function createDockerStore() {
         });
       }
       listeningEngine = engineToListen;
-      await invoke('docker_listen_events', { engine: engineToListen });
+      await dockerService.listenEvents(engineToListen);
     } catch (e) {
       console.error('Failed to listen to docker events', e);
       listeningEngine = null;
@@ -81,11 +82,11 @@ function createDockerStore() {
       selectedEngine = value;
       this.checkStatus();
     },
-    invoke<T>(cmd: string, args: Record<string, any> = {}): Promise<T> {
+    async invoke<T>(cmd: string, args: Record<string, any> = {}): Promise<T> {
       if (!selectedEngine && (cmd.startsWith('docker_') || cmd === 'check_engine_cli_command')) {
          return Promise.reject("No engine selected");
       }
-      return invoke<T>(cmd, { engine: selectedEngine, ...args });
+      return tauriInvoke<T>(cmd, { engine: selectedEngine, ...args });
     },
     get isRunning() { return isRunning; },
     get isCliInstalled() { return isCliInstalled; },
