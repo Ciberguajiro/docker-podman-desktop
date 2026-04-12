@@ -1076,6 +1076,15 @@ pub async fn docker_container_stats(engine: Engine) -> Result<Vec<ContainerStats
 }
 
 #[tauri::command]
+pub async fn run_elevated_command(
+    command: String,
+    args: Vec<String>,
+    elevated: bool,
+) -> CommandResult {
+    crate::helper::cli::run_command_with_elevation_check(&command, &args, elevated).await
+}
+
+#[tauri::command]
 pub fn get_system_metrics() -> SystemMetrics {
     use sysinfo::System;
 

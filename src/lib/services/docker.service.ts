@@ -185,5 +185,9 @@ export const dockerService = {
 
   async stopStatsStream(engine: Engine): Promise<void> {
     return invoke('docker_stop_stats_stream', { engine });
+  },
+
+  async runElevatedCommand(command: string, args: string[], elevated: boolean): Promise<CommandResult> {
+    return invoke<CommandResult>('run_elevated_command', { command, args, elevated });
   }
 };
