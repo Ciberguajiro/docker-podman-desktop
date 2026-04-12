@@ -1081,7 +1081,7 @@ pub async fn run_elevated_command(
     args: Vec<String>,
     elevated: bool,
 ) -> CommandResult {
-    crate::helper::cli::run_command_with_elevation_check(&command, &args, elevated).await
+    crate::helper::cli::run_command_with_elevation_check(&command, &args.iter().map(|s| s.as_str()).collect::<Vec<&str>>(), elevated, 60).await
 }
 
 #[tauri::command]
