@@ -127,3 +127,40 @@
 		@apply font-sans;
 	}
 }
+
+
+:root {
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s ease;
+}
+
+html,
+body {
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Scrollbar styling - customized for dark theme */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4a4a4a;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6b6b6b;
+}
+
+/* Custom utility for hidden elements */
+.legacy-hidden {
+    display: none;
+}
