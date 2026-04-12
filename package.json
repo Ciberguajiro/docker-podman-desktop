@@ -27,6 +27,7 @@
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@tauri-apps/cli": "^2",
     "clsx": "^2.1.1",
+    "prettier": "3.8.2",
     "shadcn-svelte": "^1.2.7",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
