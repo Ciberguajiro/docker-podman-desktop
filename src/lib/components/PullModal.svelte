@@ -43,7 +43,7 @@
     });
 
     try {
-      const result = await dockerStore.invoke<CommandResult>('docker_pull', { image: imageName });
+      const result = await dockerStore.invoke<CommandResult>('docker_pull', { image: `docker.io/library/${imageName}` });
       if (result.success) {
         toastStore.success(`Successfully pulled ${imageName}`);
         setTimeout(() => {
@@ -86,7 +86,7 @@
 </script>
 
 <Dialog.Root bind:open={show}>
-  <Dialog.Content class="sm:max-w-[600px] flex flex-col max-h-[90vh]">
+  <Dialog.Content class="sm:max-w-[80svw] flex flex-col max-h-[90vh]">
     <Dialog.Header>
       <div class="flex items-center gap-2">
         <Download class="w-5 h-5 text-primary" />
@@ -123,7 +123,7 @@
           bind:this={logContainer}
           class="bg-muted rounded-lg border p-4 h-64 overflow-y-auto font-mono text-xs whitespace-pre-wrap shadow-inner"
         >
-          {#each logs as log}
+          {#each logs as log (log)}
             <div class="border-b border-border/50 py-1 last:border-0">{log}</div>
           {/each}
         </div>

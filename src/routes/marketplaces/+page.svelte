@@ -18,10 +18,10 @@
     CheckCircle2,
     RefreshCw,
   } from "lucide-svelte";
-  import { cn } from "$lib/utils";
+  import type { RootObject } from "@/types/docker";
 
   let searchQuery = $state("");
-  let results = $state<any[]>([]);
+  let results = $state<RootObject|null>(null);
   let isLoading = $state(false);
   let showPullModal = $state(false);
   let pullImageName = $state("");
@@ -63,9 +63,7 @@
     }}
   >
     <div class="relative flex-1">
-      <Search
-        class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
-      />
+      <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
       <Input
         type="search"
         placeholder={i18n.t("SearchMarketplace") ||
@@ -85,29 +83,31 @@
   <div class="space-y-6">
     {#if isLoading}
       <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {#each Array(6) as i}
+        {#each Array(6) as i (i)}
           <Card.Root class="h-40 animate-pulse bg-muted/20" />
         {/each}
       </div>
-    {:else if results.length > 0}
+    {:else if results && results.count > 0}
       <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {#each results as res (res.name)}
-          <Card.Root class="group hover:border-primary/50 transition-colors flex flex-col h-full">
+        {#each results.results as res (res.repo_name)}
+          <Card.Root
+            class="group hover:border-primary/50 transition-colors flex flex-col h-full"
+          >
             <Card.Header class="pb-2">
               <div class="flex items-start justify-between">
                 <div class="space-y-1">
                   <Card.Title
                     class="text-base font-bold flex items-center gap-2"
                   >
-                    {res.name}
+                    {res.repo_name}
                     {#if res.is_official}
-                      <CheckCircle2
-                        class="h-3.5 w-3.5 text-blue-500"
-                      />
+                      <CheckCircle2 class="h-3.5 w-3.5 text-blue-500" />
                     {/if}
                   </Card.Title>
-                  <p class="text-xs text-muted-foreground line-clamp-2 min-h-[2rem]">
-                    {res.description}
+                  <p
+                    class="text-xs text-muted-foreground line-clamp-2 min-h-[2rem]"
+                  >
+                    {res.short_description}
                   </p>
                 </div>
               </div>
@@ -130,7 +130,7 @@
                 variant="outline"
                 size="sm"
                 class="w-full h-8 gap-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                onclick={() => openPull(res.name)}
+                onclick={() => openPull(res.repo_name)}
               >
                 <Download class="h-3.5 w-3.5" />
                 {i18n.t("Pull")}
@@ -140,9 +140,7 @@
         {/each}
       </div>
     {:else}
-      <div
-        class="flex flex-col items-center justify-center py-20 text-center"
-      >
+      <div class="flex flex-col items-center justify-center py-20 text-center">
         <div class="bg-muted p-4 rounded-full mb-4">
           <Search class="h-10 w-10 text-muted-foreground/50" />
         </div>
@@ -156,8 +154,5 @@
 </Container>
 
 {#if showPullModal}
-  <PullModal
-    image={pullImageName}
-    bind:show={showPullModal}
-  />
+  <PullModal image={pullImageName} bind:show={showPullModal} />
 {/if}

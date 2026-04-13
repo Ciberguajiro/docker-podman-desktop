@@ -752,7 +752,7 @@ pub async fn docker_pull(app: AppHandle, engine: Engine, image: String) -> Comma
         *cancel_tx = Some(tx);
     }
 
-    let mut child = Command::new(engine.to_string())
+    let child = Command::new(engine.to_string())
         .args(&["pull", &image])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
