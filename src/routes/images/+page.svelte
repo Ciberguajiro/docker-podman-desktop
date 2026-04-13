@@ -4,23 +4,23 @@
   import { dockerStore } from '$lib/stores/docker.svelte';
   import { toastStore } from '$lib/stores/toasts.svelte';
   import { dockerService } from '$lib/services/docker.service';
-  import { cn, sanitize, sanitizePorts } from '$lib/utils';
-  import type { DockerImage, ImageHistoryEntry, CommandResult, DockerContainer } from '$lib/types';
+  import type { DockerImage, ImageHistoryEntry, CommandResult } from '$lib/types';
 
   import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
   import InspectModal from '$lib/components/InspectModal.svelte';
   import PullModal from '$lib/components/PullModal.svelte';
-  import TagModal from '$lib/components/TagModal.svelte';
   import BuildModal from '$lib/components/BuildModal.svelte';
+  import TagModal from '$lib/components/TagModal.svelte';
 
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
-  import { Badge } from "$lib/components/ui/badge";
   import * as Card from "$lib/components/ui/card";
+  import { Label } from "$lib/components/ui/label";
   import * as Table from "$lib/components/ui/table";
   import * as Select from "$lib/components/ui/select";
-  import { Label } from "$lib/components/ui/label";
-  import { Separator } from "$lib/components/ui/separator";
+  import { Badge } from "$lib/components/ui/badge";
+  import PageHeader from "$lib/components/ui/PageHeader.svelte";
+  import Container from "$lib/components/ui/Container.svelte";
 
   import ImageTable from './components/ImageTable.svelte';
   import {
@@ -30,10 +30,9 @@
     Upload,
     Trash2,
     Search,
-    Image as ImageIcon,
-    History as HistoryIcon,
-    Play
+    Image as ImageIcon
   } from "lucide-svelte";
+  import { cn } from '$lib/utils';
 
   let images = $state<DockerImage[]>([]);
   let isLoading = $state(true);
@@ -46,28 +45,29 @@
   let showPullModal = $state(false);
   let showBuildModal = $state(false);
   let showTagModal = $state(false);
-  let selectedImage = $state<DockerImage | null>(null);
+  let showImportModal = $state(false);
+  let showRunModal = $state(false);
   let showConfirmRemove = $state(false);
-  let imageToRemove = $state<DockerImage | null>(null);
   let showConfirmPrune = $state(false);
   let showInspectModal = $state(false);
+  let showHistory = $state(false);
+
+  let selectedImage = $state<DockerImage | null>(null);
+  let imageToRemove = $state<DockerImage | null>(null);
   let inspectData = $state('');
-  let showImportModal = $state(false);
+  let historyData = $state<ImageHistoryEntry[]>([]);
+  let isHistoryLoading = $state(false);
+
+  // Form states
   let importPath = $state('');
   let importRepo = $state('');
   let importTag = $state('');
-  let showHistory = $state(false);
-  let historyData = $state<ImageHistoryEntry[]>([]);
-  let isHistoryLoading = $state(false);
-  let showRunModal = $state(false);
-
-  // Run container state
   let runImage = $state('');
   let runName = $state('');
   let runPorts = $state('');
   let runEnvs = $state('');
-  let runRestartPolicy = $state('no');
   let runVolumes = $state('');
+  let runRestartPolicy = $state('no');
 
   $effect(() => {
     const timeout = setTimeout(() => {
@@ -83,7 +83,6 @@
       images = await dockerService.getImages(dockerStore.selectedEngine);
     } catch (e) {
       console.error('Failed to load images', e);
-      toastStore.error(`Failed to load images: ${e}`);
     } finally {
       isLoading = false;
     }
@@ -102,7 +101,6 @@
   const filteredImages = $derived.by(() => {
     let filtered = images.filter(img =>
       img.repository.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      img.tag.toLowerCase().includes(searchQuery.toLowerCase()) ||
       img.id.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -110,8 +108,6 @@
       let res = 0;
       switch (sortCol) {
         case 'repository': res = a.repository.localeCompare(b.repository); break;
-        case 'tag': res = a.tag.localeCompare(b.tag); break;
-        case 'id': res = a.id.localeCompare(b.id); break;
         case 'size': res = parseFloat(a.size) - parseFloat(b.size); break;
         case 'created': res = new Date(a.created).getTime() - new Date(b.created).getTime(); break;
         default: res = a.repository.localeCompare(b.repository);
@@ -123,7 +119,7 @@
   async function removeImage() {
     if (!imageToRemove || !dockerStore.selectedEngine) return;
     const res = await dockerService.removeImage(dockerStore.selectedEngine, imageToRemove.id);
-    if (res.success) toastStore.success(`Image ${imageToRemove.repository} removed`);
+    if (res.success) toastStore.success('Image removed');
     else toastStore.error(`Error: ${res.error}`);
     showConfirmRemove = false;
     loadImages();
@@ -156,11 +152,14 @@
     try {
       historyData = await dockerService.getImageHistory(dockerStore.selectedEngine, img.id);
     } catch (e) {
-      toastStore.error(`Failed to load history: ${e}`);
+      toastStore.error(`Failed to get history: ${e}`);
     } finally {
       isHistoryLoading = false;
     }
   }
+
+  const sanitize = (s: string) => s.trim();
+  const sanitizePorts = (s: string) => s.split(',').map(p => p.trim()).filter(p => p);
 
   async function importImage() {
     if (!importPath || !importRepo || !dockerStore.selectedEngine) return;
@@ -173,10 +172,10 @@
       toastStore.success(`Image ${importRepo} imported`);
       showImportModal = false;
       importPath = ''; importRepo = ''; importTag = '';
+      loadImages();
     } else {
       toastStore.error(`Import failed: ${res.error}`);
     }
-    loadImages();
   }
 
   async function createContainer() {
@@ -226,114 +225,96 @@
   }
 </script>
 
-<div class="h-full flex flex-col bg-background">
-  <!-- Header -->
-  <header class="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-    <div class="container flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
-      <div class="flex items-center gap-3">
-        <div class="p-2 bg-primary/10 rounded-lg">
-          <ImageIcon class="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <h1 class="text-2xl font-bold tracking-tight">{i18n.t('Images')}</h1>
-          <p class="text-xs text-muted-foreground flex items-center gap-2">
-            {images.length} {i18n.t('Images').toLowerCase()}
+<Container>
+  <PageHeader
+    title={i18n.t('Images')}
+    description="Manage your local images, pull from registries, or build new ones."
+    icon={ImageIcon}
+  >
+    <div class="flex items-center gap-2">
+      <Button variant="outline" size="sm" onclick={loadImages} disabled={isLoading}>
+        <RefreshCw class={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+        {i18n.t('Refresh')}
+      </Button>
+      <Button size="sm" variant="outline" onclick={() => showPullModal = true}>
+        <Download class="h-4 w-4 mr-2" />
+        {i18n.t('Pull')}
+      </Button>
+      <Button size="sm" variant="outline" onclick={() => showBuildModal = true}>
+        <Hammer class="h-4 w-4 mr-2" />
+        {i18n.t('Build')}
+      </Button>
+      <Button size="sm" variant="outline" onclick={() => showImportModal = true}>
+        <Upload class="h-4 w-4 mr-2" />
+        {i18n.t('Import')}
+      </Button>
+      <Button variant="destructive" size="sm" onclick={() => showConfirmPrune = true}>
+        <Trash2 class="h-4 w-4 mr-2" />
+        {i18n.t('Prune')}
+      </Button>
+    </div>
+  </PageHeader>
+
+  <div class="relative max-w-md w-full">
+    <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+    <Input
+      type="search"
+      placeholder={i18n.t('SearchImages')}
+      class="pl-9"
+      bind:value={searchInput}
+    />
+  </div>
+
+  <div class="space-y-6">
+    {#if isLoading && images.length === 0}
+      <div class="grid gap-4">
+        {#each Array(3) as i_}
+          <Card.Root class="h-24 animate-pulse bg-muted/20" />
+        {/each}
+      </div>
+    {:else}
+      <ImageTable
+        images={filteredImages}
+        sortCol={sortCol}
+        sortDesc={sortDesc}
+        onSort={toggleSort}
+        onCopy={copyToClipboard}
+        onRun={openRun}
+        onTag={openTag}
+        onInspect={inspectImage}
+        onHistory={viewHistory}
+        onRemove={(img) => { imageToRemove = img; showConfirmRemove = true; }}
+      />
+
+      {#if filteredImages.length === 0 && !isLoading}
+        <div class="flex flex-col items-center justify-center py-20 text-center">
+          <div class="bg-muted p-4 rounded-full mb-4">
+            <ImageIcon class="h-10 w-10 text-muted-foreground/50" />
+          </div>
+          <h3 class="text-lg font-medium">{i18n.t('NoImagesFound')}</h3>
+          <p class="text-sm text-muted-foreground max-w-xs mt-1">
+            Pull or build an image to get started.
           </p>
         </div>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <Button variant="outline" size="sm" onclick={loadImages} disabled={isLoading}>
-          <RefreshCw class={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
-          {i18n.t('Refresh')}
-        </Button>
-        <Button size="sm" variant="outline" onclick={() => showPullModal = true}>
-          <Download class="h-4 w-4 mr-2" />
-          {i18n.t('Pull')}
-        </Button>
-        <Button size="sm" variant="outline" onclick={() => showBuildModal = true}>
-          <Hammer class="h-4 w-4 mr-2" />
-          {i18n.t('Build')}
-        </Button>
-        <Button size="sm" variant="outline" onclick={() => showImportModal = true}>
-          <Upload class="h-4 w-4 mr-2" />
-          {i18n.t('Import')}
-        </Button>
-        <Button variant="destructive" size="sm" onclick={() => showConfirmPrune = true}>
-          <Trash2 class="h-4 w-4 mr-2" />
-          {i18n.t('Prune')}
-        </Button>
-      </div>
-    </div>
-
-    <!-- Filter -->
-    <div class="container pb-4">
-      <div class="relative max-w-md">
-        <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder={i18n.t('SearchImages')}
-          class="pl-9"
-          bind:value={searchInput}
-        />
-      </div>
-    </div>
-  </header>
-
-  <!-- Content -->
-  <div class="flex-1 overflow-auto">
-    <div class="container py-6">
-      {#if isLoading && images.length === 0}
-        <div class="grid gap-4">
-          {#each Array(3) as i_}
-            <Card.Root class="h-24 animate-pulse bg-muted/20" />
-          {/each}
-        </div>
-      {:else}
-        <ImageTable
-          images={filteredImages}
-          sortCol={sortCol}
-          sortDesc={sortDesc}
-          onSort={toggleSort}
-          onCopy={copyToClipboard}
-          {openRun}
-          {openTag}
-          onInspect={inspectImage}
-          onHistory={viewHistory}
-          onRemove={(img) => { imageToRemove = img; showConfirmRemove = true; }}
-        />
-
-        {#if filteredImages.length === 0 && !isLoading}
-          <div class="flex flex-col items-center justify-center py-20 text-center">
-            <div class="bg-muted p-4 rounded-full mb-4">
-              <ImageIcon class="h-10 w-10 text-muted-foreground/50" />
-            </div>
-            <h3 class="text-lg font-medium">{i18n.t('NoImagesFound')}</h3>
-            <p class="text-sm text-muted-foreground max-w-xs mt-1">
-              Pull or build an image to get started.
-            </p>
-          </div>
-        {/if}
       {/if}
-    </div>
+    {/if}
   </div>
-</div>
+</Container>
 
 <!-- Modals -->
 {#if showPullModal}
-<PullModal onClose={() => showPullModal = false} />
+<PullModal bind:show={showPullModal} onComplete={loadImages} />
 {/if}
 
 {#if showBuildModal}
-<BuildModal onClose={() => showBuildModal = false} />
+<BuildModal bind:show={showBuildModal} onComplete={loadImages} />
 {/if}
 
 {#if showTagModal && selectedImage}
 <TagModal
-  imageId={selectedImage.id}
-  repository={selectedImage.repository}
-  tag={selectedImage.tag}
-  onClose={() => showTagModal = false}
+  image={selectedImage}
+  bind:show={showTagModal}
+  onComplete={loadImages}
 />
 {/if}
 
@@ -363,7 +344,7 @@
 <InspectModal
   title="Inspect Image"
   data={inspectData}
-  onClose={() => showInspectModal = false}
+  bind:show={showInspectModal}
 />
 {/if}
 
@@ -377,9 +358,7 @@
   <div class="grid gap-4 py-4">
     <div class="grid gap-2">
       <Label for="import-path">{i18n.t('Path')}*</Label>
-      <div class="flex gap-2">
-        <Input id="import-path" bind:value={importPath} placeholder="/path/to/image.tar" />
-      </div>
+      <Input id="import-path" bind:value={importPath} placeholder="/path/to/image.tar" />
     </div>
     <div class="grid gap-2">
       <Label for="import-repo">{i18n.t('Repository')}*</Label>

@@ -4,13 +4,16 @@
   import { dockerStore } from '$lib/stores/docker.svelte';
   import { toastStore } from '$lib/stores/toasts.svelte';
   import type { CommandResult, BuildEvent } from '$lib/types';
+  import * as Dialog from "$lib/components/ui/dialog";
+  import { Button } from "$lib/components/ui/button";
+  import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
+  import { Hammer, Loader2, XCircle } from "lucide-svelte";
 
-  interface Props {
-    show: boolean;
+  let { show = $bindable(true), onComplete } = $props<{
+    show?: boolean;
     onComplete?: () => void;
-  }
-
-  let { show = $bindable(), onComplete }: Props = $props();
+  }>();
 
   let buildPath = $state('.');
   let buildTag = $state('');
@@ -83,87 +86,83 @@
     buildTag = '';
     buildLogs = [];
   }
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && show) {
-      close();
-    }
-  }
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<Dialog.Root bind:open={show}>
+  <Dialog.Content class="sm:max-w-[700px] flex flex-col max-h-[90vh]">
+    <Dialog.Header>
+      <div class="flex items-center gap-2">
+        <Hammer class="w-5 h-5 text-primary" />
+        <Dialog.Title>Build Image from Dockerfile</Dialog.Title>
+      </div>
+    </Dialog.Header>
 
-{#if show}
-  <div class="modal modal-open">
-    <div class="modal-box w-11/12 max-w-3xl">
-      <h3 class="font-bold text-lg">Build Image from Dockerfile</h3>
-
-      <div class="py-4 space-y-4">
-        <div class="form-control">
-          <label class="label" for="build-tag"><span class="label-text">Image Tag (repository:tag)</span></label>
-          <input
+    <div class="space-y-4 py-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="space-y-2">
+          <Label for="build-tag">Image Tag (repository:tag)</Label>
+          <Input
             id="build-tag"
             type="text"
             placeholder="e.g. my-app:latest"
-            class="input input-bordered"
             bind:value={buildTag}
             disabled={isBuilding}
           />
         </div>
 
-        <div class="form-control">
-          <label class="label" for="build-path"><span class="label-text">Build Context Path</span></label>
-          <input
+        <div class="space-y-2">
+          <Label for="build-path">Build Context Path</Label>
+          <Input
             id="build-path"
             type="text"
             placeholder="Path to folder containing Dockerfile"
-            class="input input-bordered"
             bind:value={buildPath}
             disabled={isBuilding}
           />
-          <span class="label-text-alt mt-1 px-1">Relative or absolute path on host machine</span>
         </div>
+      </div>
 
-        {#if buildLogs.length > 0 || isBuilding}
-          <div class="form-control">
-            <span class="label-text mb-2">Build Logs</span>
-            <div
-              id="build-logs"
-              bind:this={logsContainer}
-              class="bg-black text-green-500 font-mono text-xs p-4 h-64 overflow-y-auto rounded-lg"
-              role="log"
-              aria-live="polite"
-            >
-              {#each buildLogs as log}
-                <div class="whitespace-pre-wrap">{log}</div>
-              {/each}
-              {#if isBuilding}
-                <div class="animate-pulse">Building...</div>
-              {/if}
-            </div>
+      {#if buildLogs.length > 0 || isBuilding}
+        <div class="space-y-2">
+          <Label>Build Logs</Label>
+          <div
+            bind:this={logsContainer}
+            class="bg-muted text-foreground font-mono text-xs p-4 h-64 overflow-y-auto rounded-lg border shadow-inner"
+          >
+            {#each buildLogs as log}
+              <div class="whitespace-pre-wrap py-0.5 border-b border-border/30 last:border-0">{log}</div>
+            {/each}
+            {#if isBuilding}
+              <div class="flex items-center gap-2 mt-2 text-primary font-bold">
+                <Loader2 class="w-3 h-3 animate-spin" />
+                Building...
+              </div>
+            {/if}
           </div>
-        {/if}
-      </div>
-
-      <div class="modal-action">
-        {#if isBuilding}
-          <button class="btn btn-error btn-outline" onclick={cancelBuild}>Stop Build</button>
-        {/if}
-        <button class="btn" onclick={close} disabled={isBuilding}>Cancel</button>
-        <button
-          class="btn btn-primary"
-          onclick={startBuild}
-          disabled={isBuilding || !buildTag || !buildPath}
-        >
-          {#if isBuilding}
-            <span class="loading loading-spinner"></span>
-            Building
-          {:else}
-            Build
-          {/if}
-        </button>
-      </div>
+        </div>
+      {/if}
     </div>
-    <div class="modal-backdrop" role="presentation" onclick={close}></div>
-  </div>
-{/if}
+
+    <Dialog.Footer class="gap-2 sm:gap-0">
+      {#if isBuilding}
+        <Button variant="destructive" onclick={cancelBuild} class="gap-2">
+          <XCircle class="w-4 h-4" />
+          Stop Build
+        </Button>
+      {/if}
+      <Button variant="ghost" onclick={close} disabled={isBuilding}>
+        Cancel
+      </Button>
+      <Button
+        onclick={startBuild}
+        disabled={isBuilding || !buildTag || !buildPath}
+        class="gap-2"
+      >
+        {#if !isBuilding}
+          <Hammer class="w-4 h-4" />
+        {/if}
+        Build
+      </Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>

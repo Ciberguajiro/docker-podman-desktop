@@ -8,6 +8,7 @@
   import { settingsStore } from "$lib/stores/settings.svelte";
   import { dockerStore } from "$lib/stores/docker.svelte";
   import { Button } from "$lib/components/ui/button";
+  import { Zap, AlertTriangle, Lock, RefreshCw } from "lucide-svelte";
 
   let { children } = $props();
 
@@ -58,7 +59,9 @@
   <main class="flex-1 overflow-auto bg-background relative">
     {#if !dockerStore.isCliInstalled}
       <div in:fade={{ duration: 200 }} class="flex flex-col items-center justify-center min-h-full p-6 text-center">
-        <div class="text-6xl mb-6">🚫</div>
+        <div class="p-4 bg-destructive/10 rounded-full mb-6">
+          <AlertTriangle class="w-12 h-12 text-destructive" />
+        </div>
         <h1 class="text-3xl font-bold tracking-tight mb-2">Docker CLI not found</h1>
         <p class="text-muted-foreground mb-8 max-w-md">
           Please install Docker CLI to use this application.
@@ -67,12 +70,15 @@
           size="lg"
           onclick={() => dockerStore.checkStatus()}
         >
+          <RefreshCw class="w-4 h-4 mr-2" />
           Retry
         </Button>
       </div>
     {:else if !dockerStore.selectedEngine}
       <div in:fade={{ duration: 200 }} class="flex flex-col items-center justify-center min-h-full p-6 text-center">
-        <div class="text-6xl mb-6">🚀</div>
+        <div class="p-4 bg-primary/10 rounded-full mb-6 animate-bounce">
+          <Zap class="w-12 h-12 text-primary" />
+        </div>
         <h1 class="text-3xl font-bold tracking-tight mb-2">{i18n.t("Welcome")}</h1>
         <p class="text-muted-foreground mb-8 max-w-md">
           {i18n.t("SelectEngineMessage")}
@@ -80,7 +86,7 @@
         <div class="flex gap-4">
           <Button
             size="lg"
-            class="min-w-[120px]"
+            class="min-w-[140px]"
             onclick={() => (dockerStore.selectedEngine = "docker")}
           >
             Docker
@@ -88,7 +94,7 @@
           <Button
             variant="secondary"
             size="lg"
-            class="min-w-[120px]"
+            class="min-w-[140px]"
             onclick={() => (dockerStore.selectedEngine = "podman")}
           >
             Podman
@@ -98,17 +104,21 @@
     {:else if !dockerStore.isRunning}
       <div in:fade={{ duration: 200 }} class="flex flex-col items-center justify-center min-h-full p-6 text-center">
         {#if dockerStore.dockerError?.toLowerCase().includes("permission denied")}
-          <div class="text-6xl mb-6">🔐</div>
+          <div class="p-4 bg-amber-500/10 rounded-full mb-6">
+            <Lock class="w-12 h-12 text-amber-500" />
+          </div>
           <h1 class="text-3xl font-bold tracking-tight mb-2">{i18n.t("PermissionDenied")}</h1>
           <div class="text-muted-foreground mb-8 max-w-md space-y-4">
             <p>{i18n.t("PermissionDeniedMessage")}</p>
-            <div class="bg-muted p-3 rounded-md font-mono text-sm border">
+            <div class="bg-muted p-3 rounded-md font-mono text-sm border shadow-inner">
               sudo usermod -aG docker $USER
             </div>
             <p>{i18n.t("PermissionAdvice")}</p>
           </div>
         {:else}
-          <div class="text-6xl mb-6">⚠️</div>
+          <div class="p-4 bg-destructive/10 rounded-full mb-6">
+            <AlertTriangle class="w-12 h-12 text-destructive" />
+          </div>
           <h1 class="text-3xl font-bold tracking-tight mb-2">{i18n.t("DockerNotRunning")}</h1>
           <p class="text-muted-foreground mb-8 max-w-md">
             {i18n.t("DockerNotRunningMessage")}
@@ -123,6 +133,7 @@
           size="lg"
           onclick={() => dockerStore.checkStatus()}
         >
+          <RefreshCw class="w-4 h-4 mr-2" />
           {i18n.t("Retry")}
         </Button>
       </div>
@@ -130,7 +141,7 @@
       <div
         in:fly={{ y: 10, duration: 200, delay: 200 }}
         out:fade={{ duration: 200 }}
-        class="absolute inset-0 overflow-auto p-3"
+        class="absolute inset-0 overflow-auto"
       >
         {@render children()}
       </div>

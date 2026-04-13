@@ -1,11 +1,14 @@
 <script lang="ts">
-  import { invoke } from '$lib/tauri';
   import { dockerStore } from '$lib/stores/docker.svelte';
   import { toastStore } from '$lib/stores/toasts.svelte';
   import type { CommandResult } from '$lib/types';
+  import * as Dialog from "$lib/components/ui/dialog";
+  import { Button } from "$lib/components/ui/button";
+  import { Input } from "$lib/components/ui/input";
+  import { Terminal, Play, Loader2 } from "lucide-svelte";
 
-  let { show = $bindable(false), containerId, containerName } = $props<{
-    show: boolean;
+  let { show = $bindable(true), containerId, containerName } = $props<{
+    show?: boolean;
     containerId: string;
     containerName: string;
   }>();
@@ -42,47 +45,47 @@
     command = '';
     output = '';
   }
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && show) {
-      close();
-    }
-  }
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
-
-{#if show}
-  <div class="modal modal-open">
-    <div class="modal-box w-11/12 max-w-4xl">
-      <h3 class="font-bold text-lg">Exec in {containerName}</h3>
-      <div class="py-4 space-y-4">
-        <div class="flex gap-2">
-          <input
-            type="text"
-            placeholder="e.g. ls -la"
-            class="input input-bordered flex-1"
-            bind:value={command}
-            onkeydown={(e) => e.key === 'Enter' && execute()}
-          />
-          <button
-            class="btn btn-primary"
-            onclick={execute}
-            disabled={isExecuting || !command}
-          >
-            {#if isExecuting}<span class="loading loading-spinner loading-xs"></span>{/if}
-            Run
-          </button>
-        </div>
-
-        <div class="bg-black text-green-400 p-4 rounded font-mono text-sm min-h-[200px] max-h-[400px] overflow-auto whitespace-pre-wrap">
-          {output || 'Command output will appear here...'}
-        </div>
+<Dialog.Root bind:open={show}>
+  <Dialog.Content class="sm:max-w-[800px] flex flex-col max-h-[90vh]">
+    <Dialog.Header>
+      <div class="flex items-center gap-2">
+        <Terminal class="w-5 h-5 text-primary" />
+        <Dialog.Title>Exec in {containerName}</Dialog.Title>
       </div>
-      <div class="modal-action">
-        <button class="btn" onclick={close}>Close</button>
+    </Dialog.Header>
+
+    <div class="space-y-4 py-4">
+      <div class="flex gap-2">
+        <Input
+          type="text"
+          placeholder="e.g. ls -la"
+          bind:value={command}
+          onkeydown={(e) => e.key === 'Enter' && execute()}
+          disabled={isExecuting}
+        />
+        <Button
+          onclick={execute}
+          disabled={isExecuting || !command}
+          class="gap-2"
+        >
+          {#if isExecuting}
+            <Loader2 class="w-4 h-4 animate-spin" />
+          {:else}
+            <Play class="w-4 h-4" />
+          {/if}
+          Run
+        </Button>
+      </div>
+
+      <div class="bg-muted text-foreground border p-4 rounded-lg font-mono text-xs min-h-[200px] max-h-[400px] overflow-auto whitespace-pre-wrap shadow-inner">
+        {output || 'Command output will appear here...'}
       </div>
     </div>
-    <div class="modal-backdrop" role="presentation" onclick={close}></div>
-  </div>
-{/if}
+
+    <Dialog.Footer>
+      <Button variant="ghost" onclick={close}>Close</Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>

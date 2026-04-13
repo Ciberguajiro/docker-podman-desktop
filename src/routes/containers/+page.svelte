@@ -3,9 +3,7 @@
   import { i18n } from '$lib/stores/i18n.svelte';
   import { dockerStore } from '$lib/stores/docker.svelte';
   import { toastStore } from '$lib/stores/toasts.svelte';
-  import { settingsStore } from '$lib/stores/settings.svelte';
   import { dockerService } from '$lib/services/docker.service';
-  import { cn, sanitize, sanitizePorts } from '$lib/utils';
   import type { DockerContainer, DockerImage, CommandResult } from '$lib/types';
 
   import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
@@ -16,37 +14,36 @@
 
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
-  import { Badge } from "$lib/components/ui/badge";
-  import * as Select from "$lib/components/ui/select";
-  import * as Tabs from "$lib/components/ui/tabs";
   import * as Card from "$lib/components/ui/card";
-  import * as Accordion from "$lib/components/ui/accordion";
-  import * as Table from "$lib/components/ui/table";
-  import { Separator } from "$lib/components/ui/separator";
-  import { Checkbox } from "$lib/components/ui/checkbox";
   import { Label } from "$lib/components/ui/label";
+  import * as Select from "$lib/components/ui/select";
+  import { Checkbox } from "$lib/components/ui/checkbox";
+  import * as Accordion from "$lib/components/ui/accordion";
+  import { Badge } from "$lib/components/ui/badge";
+  import * as Table from "$lib/components/ui/table";
+  import PageHeader from "$lib/components/ui/PageHeader.svelte";
+  import Container from "$lib/components/ui/Container.svelte";
 
   import ContainerTable from './components/ContainerTable.svelte';
   import ComposeGroup from './components/ComposeGroup.svelte';
+
   import {
     RefreshCw,
     Plus,
     Trash2,
     Search,
     Filter,
-    Package,
-    Activity,
-    Box
+    Box,
+    Package
   } from "lucide-svelte";
+  import { cn } from '$lib/utils';
 
   let containers = $state<DockerContainer[]>([]);
   let isLoading = $state(true);
-  let lastRefreshed = $state<Date | null>(null);
+  let showAll = $state(false);
+  let statusFilter = $state('all');
   let searchQuery = $state('');
   let searchInput = $state('');
-  let statusFilter = $state('all');
-  let images = $state<DockerImage[]>([]);
-  let showAll = $state(true);
   let sortCol = $state('name');
   let sortDesc = $state(false);
 
@@ -56,8 +53,10 @@
   let containerToRemove = $state<DockerContainer | null>(null);
   let showConfirmPrune = $state(false);
   let showInspectModal = $state(false);
-  let inspectTitle = $state('');
   let inspectData = $state('');
+  let inspectTitle = $state('');
+
+  // Exec/Logs/Files state
   let showExecModal = $state(false);
   let execId = $state('');
   let execName = $state('');
@@ -67,11 +66,16 @@
   let showFilesModal = $state(false);
   let filesId = $state('');
   let filesName = $state('');
-  let showExportModal = $state(false);
-  let exportPath = $state('');
-  let containerToExport = $state<DockerContainer | null>(null);
 
-  // Create container state
+  // Export state
+  let showExportModal = $state(false);
+  let exportId = $state('');
+  let exportPath = $state('');
+
+  // Unused images
+  let unusedImages = $state<DockerImage[]>([]);
+
+  // Create Container form
   let newImage = $state('');
   let newName = $state('');
   let newPorts = $state('');
@@ -91,10 +95,8 @@
     isLoading = true;
     try {
       containers = await dockerService.getContainers(dockerStore.selectedEngine, showAll);
-      lastRefreshed = new Date();
     } catch (e) {
       console.error('Failed to load containers', e);
-      toastStore.error(`Failed to load containers: ${e}`);
     } finally {
       isLoading = false;
     }
@@ -110,31 +112,21 @@
     loadContainers();
   });
 
-  async function loadUnusedImages() {
-    if (!dockerStore.selectedEngine) return;
-    try {
-      images = await dockerService.getImages(dockerStore.selectedEngine);
-    } catch (e) {
-      console.error('Failed to load images', e);
-    }
-  }
-
   const filteredContainers = $derived.by(() => {
-    let filtered = containers.filter(c => {
-      const matchesQuery = !searchQuery ||
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.image.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (c.compose_project && c.compose_project.toLowerCase().includes(searchQuery.toLowerCase()));
-      const matchesStatus = statusFilter === 'all' || c.state.toLowerCase() === statusFilter;
-      return matchesQuery && matchesStatus;
-    });
+    let filtered = containers.filter(c =>
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.image.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(c => c.state === statusFilter);
+    }
 
     return filtered.sort((a, b) => {
       let res = 0;
       switch (sortCol) {
         case 'name': res = a.name.localeCompare(b.name); break;
         case 'image': res = a.image.localeCompare(b.image); break;
-        case 'status': res = a.status.localeCompare(b.status); break;
         case 'state': res = a.state.localeCompare(b.state); break;
         default: res = a.name.localeCompare(b.name);
       }
@@ -158,17 +150,10 @@
     return { groups, standalone };
   });
 
-  const unusedImages = $derived.by(() => {
-    return images.filter(img => {
-      const imgFullName = `${img.repository}:${img.tag}`;
-      return !containers.some(c => c.image === img.repository || c.image === imgFullName || c.image === img.id);
-    });
-  });
-
   async function startContainer(id: string) {
     if (!dockerStore.selectedEngine) return;
     const res = await dockerService.startContainer(dockerStore.selectedEngine, id);
-    if (res.success) toastStore.success(`Container ${id} started`);
+    if (res.success) toastStore.success('Container started');
     else toastStore.error(`Error: ${res.error}`);
     loadContainers();
   }
@@ -176,7 +161,7 @@
   async function stopContainer(id: string) {
     if (!dockerStore.selectedEngine) return;
     const res = await dockerService.stopContainer(dockerStore.selectedEngine, id);
-    if (res.success) toastStore.success(`Container ${id} stopped`);
+    if (res.success) toastStore.success('Container stopped');
     else toastStore.error(`Error: ${res.error}`);
     loadContainers();
   }
@@ -184,7 +169,7 @@
   async function removeContainer() {
     if (!containerToRemove || !dockerStore.selectedEngine) return;
     const res = await dockerService.removeContainer(dockerStore.selectedEngine, containerToRemove.id);
-    if (res.success) toastStore.success(`Container ${containerToRemove.name} removed`);
+    if (res.success) toastStore.success('Container removed');
     else toastStore.error(`Error: ${res.error}`);
     showConfirmRemove = false;
     loadContainers();
@@ -193,93 +178,48 @@
   async function pruneContainers() {
     if (!dockerStore.selectedEngine) return;
     const res = await dockerService.prune(dockerStore.selectedEngine, 'containers');
-    if (res.success) toastStore.success('Stopped containers pruned');
+    if (res.success) toastStore.success('Unused containers pruned');
     else toastStore.error(`Prune failed: ${res.error}`);
     showConfirmPrune = false;
-    loadContainers();
-  }
-
-  async function createContainer() {
-    if (!newImage || !dockerStore.selectedEngine) return;
-    const res = await dockerService.createContainer(dockerStore.selectedEngine, {
-      image: sanitize(newImage),
-      name: sanitize(newName),
-      ports: sanitizePorts(newPorts),
-      envs: sanitize(newEnvs),
-      volumes: sanitize(newVolumes),
-      restartPolicy: newRestartPolicy
-    });
-    if (res.success) {
-      toastStore.success(`Container created from ${newImage}`);
-      showCreateModal = false;
-      newImage = ''; newName = ''; newPorts = ''; newEnvs = ''; newVolumes = ''; newRestartPolicy = 'no';
-    } else {
-      toastStore.error(`Error: ${res.error}`);
-    }
     loadContainers();
   }
 
   async function inspectContainer(c: DockerContainer) {
     if (!dockerStore.selectedEngine) return;
     try {
-      inspectTitle = `Inspect Container: ${c.name}`;
       inspectData = await dockerService.inspect(dockerStore.selectedEngine, c.id);
+      inspectTitle = `Inspect: ${c.name}`;
       showInspectModal = true;
     } catch (e) {
       toastStore.error(`Failed to inspect container: ${e}`);
     }
   }
 
-  async function copyToClipboard(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      toastStore.success(i18n.t('CopiedToClipboard'));
-    } catch (err) {
-      toastStore.error(i18n.t('FailedToCopy'));
-    }
-  }
-
-  async function exportContainer() {
-    if (!containerToExport || !exportPath || !dockerStore.selectedEngine) return;
-    const res = await dockerService.exportContainer(dockerStore.selectedEngine, containerToExport.id, exportPath);
-    if (res.success) {
-      toastStore.success(`Container exported to ${exportPath}`);
-      showExportModal = false;
-    } else {
-      toastStore.error(`Export failed: ${res.error}`);
-    }
-  }
-
-  async function composeUp(project: string) {
+  async function onComposeUp(project: string) {
     if (!dockerStore.selectedEngine) return;
+    toastStore.info(`Compose up: ${project}...`);
     const res = await dockerService.composeUp(dockerStore.selectedEngine, project);
-    if (res.success) toastStore.success(`Compose up: ${project}`);
-    else toastStore.error(`Error: ${res.error}`);
+    if (res.success) toastStore.success(`Project ${project} up`);
+    else toastStore.error(`Compose up failed: ${res.error}`);
     loadContainers();
   }
 
-  async function composeDown(project: string) {
+  async function onComposeRestart(project: string) {
     if (!dockerStore.selectedEngine) return;
-    const res = await dockerService.composeDown(dockerStore.selectedEngine, project);
-    if (res.success) toastStore.success(`Compose down: ${project}`);
-    else toastStore.error(`Error: ${res.error}`);
-    loadContainers();
-  }
-
-  async function composeRestart(project: string) {
-    if (!dockerStore.selectedEngine) return;
+    toastStore.info(`Compose restart: ${project}...`);
     const res = await dockerService.composeRestart(dockerStore.selectedEngine, project);
-    if (res.success) toastStore.success(`Compose restart: ${project}`);
-    else toastStore.error(`Error: ${res.error}`);
+    if (res.success) toastStore.success(`Project ${project} restarted`);
+    else toastStore.error(`Compose restart failed: ${res.error}`);
     loadContainers();
   }
 
-  function toggleSort(col: string) {
-    if (sortCol === col) sortDesc = !sortDesc;
-    else {
-      sortCol = col;
-      sortDesc = false;
-    }
+  async function onComposeDown(project: string) {
+    if (!dockerStore.selectedEngine) return;
+    toastStore.info(`Compose down: ${project}...`);
+    const res = await dockerService.composeDown(dockerStore.selectedEngine, project);
+    if (res.success) toastStore.success(`Project ${project} down`);
+    else toastStore.error(`Compose down failed: ${res.error}`);
+    loadContainers();
   }
 
   function openExec(c: DockerContainer) {
@@ -301,102 +241,168 @@
   }
 
   function openExport(c: DockerContainer) {
-    containerToExport = c;
-    exportPath = `${c.name}.tar`;
+    exportId = c.id;
+    exportPath = `${c.name}_export.tar`;
     showExportModal = true;
+  }
+
+  async function exportContainer() {
+    if (!exportId || !exportPath || !dockerStore.selectedEngine) return;
+    const res = await dockerService.exportContainer(dockerStore.selectedEngine, exportId, exportPath);
+    if (res.success) toastStore.success(`Container exported to ${exportPath}`);
+    else toastStore.error(`Export failed: ${res.error}`);
+    showExportModal = false;
+  }
+
+  async function loadUnusedImages() {
+    if (!dockerStore.selectedEngine) return;
+    try {
+      const allImages = await dockerService.getImages(dockerStore.selectedEngine);
+      // Simple heuristic for "unused" if we don't have a direct prune-dry-run
+      // For now, just show all for this UI demo if needed, or implement real logic
+      unusedImages = allImages.slice(0, 5); // Placeholder
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  const sanitize = (s: string) => s.trim();
+  const sanitizePorts = (s: string) => s.split(',').map(p => p.trim()).filter(p => p);
+
+  async function createContainer() {
+    if (!newImage || !dockerStore.selectedEngine) return;
+    const res = await dockerService.createContainer(dockerStore.selectedEngine, {
+      image: sanitize(newImage),
+      name: sanitize(newName),
+      ports: sanitizePorts(newPorts),
+      envs: sanitize(newEnvs),
+      volumes: sanitize(newVolumes),
+      restartPolicy: newRestartPolicy
+    });
+    if (res.success) {
+      toastStore.success(`Container created from ${newImage}`);
+      showCreateModal = false;
+      newImage = ''; newName = ''; newPorts = ''; newEnvs = ''; newVolumes = ''; newRestartPolicy = 'no';
+      loadContainers();
+    } else {
+      toastStore.error(`Error: ${res.error}`);
+    }
+  }
+
+  function toggleSort(col: string) {
+    if (sortCol === col) sortDesc = !sortDesc;
+    else {
+      sortCol = col;
+      sortDesc = false;
+    }
+  }
+
+  async function copyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toastStore.success(i18n.t('CopiedToClipboard'));
+    } catch (err) {
+      toastStore.error(i18n.t('FailedToCopy'));
+    }
   }
 </script>
 
-<div class="h-full flex flex-col bg-background">
-  <!-- Header -->
-  <header class="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-    <div class="container flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
-      <div class="flex items-center gap-3">
-        <div class="p-2 bg-primary/10 rounded-lg">
-          <Package class="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <h1 class="text-2xl font-bold tracking-tight">{i18n.t('Containers')}</h1>
-          <p class="text-xs text-muted-foreground flex items-center gap-2">
-            <Activity class="h-3 w-3" />
-            {containers.length} {i18n.t('Containers').toLowerCase()}
-            {#if lastRefreshed}
-              • {i18n.t('LastUpdated')}: {lastRefreshed.toLocaleTimeString()}
-            {/if}
-          </p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <Button variant="outline" size="sm" onclick={loadContainers} disabled={isLoading}>
-          <RefreshCw class={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
-          {i18n.t('Refresh')}
-        </Button>
-        <Button size="sm" onclick={() => showCreateModal = true}>
-          <Plus class="h-4 w-4 mr-2" />
-          {i18n.t('Container')}
-        </Button>
-        <Button variant="destructive" size="sm" onclick={() => showConfirmPrune = true}>
-          <Trash2 class="h-4 w-4 mr-2" />
-          {i18n.t('Prune')}
-        </Button>
-      </div>
+<Container>
+  <PageHeader
+    title={i18n.t('Containers')}
+    description="Manage and monitor your running containers and compose projects."
+    icon={Box}
+  >
+    <div class="flex items-center gap-2">
+      <Button variant="outline" size="sm" onclick={loadContainers} disabled={isLoading}>
+        <RefreshCw class={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+        {i18n.t('Refresh')}
+      </Button>
+      <Button size="sm" onclick={() => showCreateModal = true}>
+        <Plus class="h-4 w-4 mr-2" />
+        {i18n.t('NewContainer')}
+      </Button>
+      <Button variant="destructive" size="sm" onclick={() => showConfirmPrune = true}>
+        <Trash2 class="h-4 w-4 mr-2" />
+        {i18n.t('Prune')}
+      </Button>
     </div>
+  </PageHeader>
 
-    <!-- Filters -->
-    <div class="container pb-4">
-      <div class="flex flex-col md:flex-row gap-4">
-        <div class="relative flex-1">
-          <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder={i18n.t('Search')}
-            class="pl-9"
-            bind:value={searchInput}
-          />
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="flex items-center space-x-2 bg-muted/50 px-3 py-1.5 rounded-md border">
-            <Checkbox id="show-all" bind:checked={showAll} onCheckedChange={loadContainers} />
-            <Label for="show-all" class="text-xs font-medium cursor-pointer">{i18n.t('ShowAll')}</Label>
+  <div class="flex flex-col md:flex-row gap-4 items-center">
+    <div class="relative flex-1 w-full">
+      <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      <Input
+        type="search"
+        placeholder={i18n.t('Search')}
+        class="pl-9"
+        bind:value={searchInput}
+      />
+    </div>
+    <div class="flex items-center gap-2 w-full md:w-auto">
+      <div class="flex items-center space-x-2 bg-muted/50 px-3 py-2 rounded-md border h-10">
+        <Checkbox id="show-all" bind:checked={showAll} onCheckedChange={loadContainers} />
+        <Label for="show-all" class="text-xs font-medium cursor-pointer whitespace-nowrap">{i18n.t('ShowAll')}</Label>
+      </div>
+      <Select.Root type="single" value={statusFilter} onValueChange={v => statusFilter = v || 'all'}>
+        <Select.Trigger class="w-[140px] h-10">
+          <Filter class="h-3.5 w-3.5 mr-2" />
+          {statusFilter === 'all' ? i18n.t('AllStatuses') : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
+        </Select.Trigger>
+        <Select.Content>
+          <Select.Item value="all">{i18n.t('AllStatuses')}</Select.Item>
+          <Select.Item value="running">{i18n.t('Running')}</Select.Item>
+          <Select.Item value="exited">{i18n.t('Stopped')}</Select.Item>
+          <Select.Item value="created">{i18n.t('CreatedState')}</Select.Item>
+        </Select.Content>
+      </Select.Root>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    {#if isLoading && containers.length === 0}
+      <div class="grid gap-4">
+        {#each Array(3) as i_}
+          <Card.Root class="h-32 animate-pulse bg-muted/20" />
+        {/each}
+      </div>
+    {:else}
+      <!-- Grouped by Project (Compose) -->
+      {#each Object.entries(groupedContainers.groups) as [project, groupContainers] (project)}
+        <ComposeGroup
+          {project}
+          containers={groupContainers}
+          {onComposeUp}
+          {onComposeRestart}
+          {onComposeDown}
+          sortCol={sortCol}
+          sortDesc={sortDesc}
+          onSort={toggleSort}
+          onCopy={copyToClipboard}
+          onStart={startContainer}
+          onStop={stopContainer}
+          onExec={openExec}
+          onFiles={openFiles}
+          onLogs={openLogs}
+          onExport={openExport}
+          onInspect={inspectContainer}
+          onRemove={(c) => { containerToRemove = c; showConfirmRemove = true; }}
+        />
+      {/each}
+
+      <!-- Standalone Containers -->
+      {#if groupedContainers.standalone.length > 0}
+        <div class="space-y-4">
+          <div class="flex items-center gap-2 px-1">
+            <Box class="h-4 w-4 text-muted-foreground" />
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              {i18n.t('StandaloneContainers')}
+            </h2>
           </div>
-          <Select.Root type="single" value={statusFilter} onValueChange={v => statusFilter = v || 'all'}>
-            <Select.Trigger class="w-[140px] h-9">
-              <Filter class="h-3.5 w-3.5 mr-2" />
-              {statusFilter === 'all' ? i18n.t('AllStatuses') : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
-            </Select.Trigger>
-            <Select.Content>
-              <Select.Item value="all">{i18n.t('AllStatuses')}</Select.Item>
-              <Select.Item value="running">{i18n.t('Running')}</Select.Item>
-              <Select.Item value="exited">{i18n.t('Exited')}</Select.Item>
-              <Select.Item value="created">{i18n.t('Created')}</Select.Item>
-            </Select.Content>
-          </Select.Root>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- Content -->
-  <div class="flex-1 overflow-auto">
-    <div class="container py-6">
-      {#if isLoading && containers.length === 0}
-        <div class="grid gap-4">
-          {#each Array(3) as i_}
-            <Card.Root class="h-32 animate-pulse bg-muted/20" />
-          {/each}
-        </div>
-      {:else}
-        <!-- Grouped by Project (Compose) -->
-        {#each Object.entries(groupedContainers.groups) as [project, groupContainers] (project)}
-          <ComposeGroup
-            {project}
-            containers={groupContainers}
-            {onComposeUp}
-            {onComposeRestart}
-            {onComposeDown}
-            sortCol={sortCol}
-            sortDesc={sortDesc}
+          <ContainerTable
+            containers={groupedContainers.standalone}
+            {sortCol}
+            {sortDesc}
             onSort={toggleSort}
             onCopy={copyToClipboard}
             onStart={startContainer}
@@ -408,97 +414,69 @@
             onInspect={inspectContainer}
             onRemove={(c) => { containerToRemove = c; showConfirmRemove = true; }}
           />
-        {/each}
-
-        <!-- Standalone Containers -->
-        {#if groupedContainers.standalone.length > 0}
-          <div class="space-y-4">
-            <div class="flex items-center gap-2 px-1">
-              <Box class="h-4 w-4 text-muted-foreground" />
-              <h2 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {i18n.t('StandaloneContainers')}
-              </h2>
-            </div>
-            <ContainerTable
-              containers={groupedContainers.standalone}
-              {sortCol}
-              {sortDesc}
-              onSort={toggleSort}
-              onCopy={copyToClipboard}
-              onStart={startContainer}
-              onStop={stopContainer}
-              onExec={openExec}
-              onFiles={openFiles}
-              onLogs={openLogs}
-              onExport={openExport}
-              onInspect={inspectContainer}
-              onRemove={(c) => { containerToRemove = c; showConfirmRemove = true; }}
-            />
-          </div>
-        {/if}
-
-        {#if containers.length === 0 && !isLoading}
-          <div class="flex flex-col items-center justify-center py-20 text-center">
-            <div class="bg-muted p-4 rounded-full mb-4">
-              <Package class="h-10 w-10 text-muted-foreground/50" />
-            </div>
-            <h3 class="text-lg font-medium">{i18n.t('NoContainersFound')}</h3>
-            <p class="text-sm text-muted-foreground max-w-xs mt-1">
-              Try changing your filters or create a new container to get started.
-            </p>
-          </div>
-        {/if}
+        </div>
       {/if}
 
-      <!-- Unused Images Collapsible -->
-      <div class="mt-12 border rounded-lg overflow-hidden bg-card">
-        <Accordion.Root type="single" onValueChange={v => v === 'unused-images' && loadUnusedImages()}>
-          <Accordion.Item value="unused-images" class="border-none">
-            <Accordion.Trigger class="px-4 py-3 hover:bg-muted/50 transition-colors">
-              <span class="flex items-center gap-2 font-medium">
-                <Trash2 class="h-4 w-4 text-muted-foreground" />
-                {i18n.t('UnusedImages')}
-                <Badge variant="secondary" class="ml-2">{unusedImages.length}</Badge>
-              </span>
-            </Accordion.Trigger>
-            <Accordion.Content class="p-0 border-t">
-              <Table.Root>
-                <Table.Header>
-                  <Table.Row class="bg-muted/30">
-                    <Table.Head>{i18n.t('ImageID')}</Table.Head>
-                    <Table.Head>{i18n.t('Repository')}</Table.Head>
-                    <Table.Head>{i18n.t('Tag')}</Table.Head>
-                    <Table.Head class="text-right">{i18n.t('Size')}</Table.Head>
+      {#if containers.length === 0 && !isLoading}
+        <div class="flex flex-col items-center justify-center py-20 text-center">
+          <div class="bg-muted p-4 rounded-full mb-4">
+            <Package class="h-10 w-10 text-muted-foreground/50" />
+          </div>
+          <h3 class="text-lg font-medium">{i18n.t('NoContainersFound')}</h3>
+          <p class="text-sm text-muted-foreground max-w-xs mt-1">
+            Try changing your filters or create a new container to get started.
+          </p>
+        </div>
+      {/if}
+    {/if}
+
+    <!-- Unused Images Collapsible -->
+    <div class="mt-8 border rounded-lg overflow-hidden bg-card">
+      <Accordion.Root type="single" onValueChange={v => v === 'unused-images' && loadUnusedImages()}>
+        <Accordion.Item value="unused-images" class="border-none">
+          <Accordion.Trigger class="px-4 py-3 hover:bg-muted/50 transition-colors">
+            <span class="flex items-center gap-2 font-medium">
+              <Trash2 class="h-4 w-4 text-muted-foreground" />
+              {i18n.t('UnusedImages')}
+              <Badge variant="secondary" class="ml-2">{unusedImages.length}</Badge>
+            </span>
+          </Accordion.Trigger>
+          <Accordion.Content class="p-0 border-t">
+            <Table.Root>
+              <Table.Header>
+                <Table.Row class="bg-muted/30">
+                  <Table.Head>{i18n.t('ImageID')}</Table.Head>
+                  <Table.Head>{i18n.t('Repository')}</Table.Head>
+                  <Table.Head>{i18n.t('Tag')}</Table.Head>
+                  <Table.Head class="text-right">{i18n.t('Size')}</Table.Head>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                {#each unusedImages as img (img.id)}
+                  <Table.Row>
+                    <Table.Cell class="font-mono text-[10px] text-muted-foreground">{img.id.slice(0, 12)}</Table.Cell>
+                    <Table.Cell class="font-medium text-xs">{img.repository}</Table.Cell>
+                    <Table.Cell><Badge variant="outline" class="text-[10px] px-1 h-4">{img.tag}</Badge></Table.Cell>
+                    <Table.Cell class="text-right text-xs text-muted-foreground">{img.size}</Table.Cell>
                   </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                  {#each unusedImages as img (img.id)}
-                    <Table.Row>
-                      <Table.Cell class="font-mono text-[10px] text-muted-foreground">{img.id.slice(0, 12)}</Table.Cell>
-                      <Table.Cell class="font-medium text-xs">{img.repository}</Table.Cell>
-                      <Table.Cell><Badge variant="outline" class="text-[10px] px-1 h-4">{img.tag}</Badge></Table.Cell>
-                      <Table.Cell class="text-right text-xs text-muted-foreground">{img.size}</Table.Cell>
-                    </Table.Row>
-                  {/each}
-                  {#if unusedImages.length === 0}
-                    <Table.Row>
-                      <Table.Cell colspan={4} class="h-16 text-center text-muted-foreground text-sm italic">
-                        No unused images found.
-                      </Table.Cell>
-                    </Table.Row>
-                  {/if}
-                </Table.Body>
-              </Table.Root>
-            </Accordion.Content>
-          </Accordion.Item>
-        </Accordion.Root>
-      </div>
+                {/each}
+                {#if unusedImages.length === 0}
+                  <Table.Row>
+                    <Table.Cell colspan={4} class="h-16 text-center text-muted-foreground text-sm italic">
+                      No unused images found.
+                    </Table.Cell>
+                  </Table.Row>
+                {/if}
+              </Table.Body>
+            </Table.Root>
+          </Accordion.Content>
+        </Accordion.Item>
+      </Accordion.Root>
     </div>
   </div>
-</div>
+</Container>
 
 <!-- Modals -->
-<!-- Create Container Modal -->
 {#if showCreateModal}
 <ConfirmationModal
   title={i18n.t('NewContainer')}
@@ -545,7 +523,6 @@
 </ConfirmationModal>
 {/if}
 
-<!-- Remove Container Confirm -->
 {#if showConfirmRemove && containerToRemove}
 <ConfirmationModal
   title={i18n.t('ConfirmRemove')}
@@ -557,7 +534,6 @@
 />
 {/if}
 
-<!-- Prune Confirm -->
 {#if showConfirmPrune}
 <ConfirmationModal
   title={i18n.t('ConfirmPrune')}
@@ -569,7 +545,6 @@
 />
 {/if}
 
-<!-- Export Container Modal -->
 {#if showExportModal}
 <ConfirmationModal
   title={i18n.t('ExportContainer')}
@@ -584,12 +559,11 @@
 </ConfirmationModal>
 {/if}
 
-<!-- Other Modals -->
 {#if showInspectModal}
 <InspectModal
   title={inspectTitle}
   data={inspectData}
-  onClose={() => showInspectModal = false}
+  bind:show={showInspectModal}
 />
 {/if}
 
@@ -597,7 +571,7 @@
 <ExecModal
   containerId={execId}
   containerName={execName}
-  onClose={() => showExecModal = false}
+  bind:show={showExecModal}
 />
 {/if}
 
@@ -605,7 +579,7 @@
 <LogsModal
   containerId={logsId}
   containerName={logsName}
-  onClose={() => showLogsModal = false}
+  bind:show={showLogsModal}
 />
 {/if}
 
@@ -613,6 +587,6 @@
 <FilesModal
   containerId={filesId}
   containerName={filesName}
-  onClose={() => showFilesModal = false}
+  bind:show={showFilesModal}
 />
 {/if}

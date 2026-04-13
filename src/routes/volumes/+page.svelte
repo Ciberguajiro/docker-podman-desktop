@@ -13,6 +13,8 @@
   import { Input } from "$lib/components/ui/input";
   import * as Card from "$lib/components/ui/card";
   import { Label } from "$lib/components/ui/label";
+  import PageHeader from "$lib/components/ui/PageHeader.svelte";
+  import Container from "$lib/components/ui/Container.svelte";
 
   import VolumeTable from './components/VolumeTable.svelte';
   import {
@@ -148,87 +150,70 @@
   }
 </script>
 
-<div class="h-full flex flex-col bg-background">
-  <!-- Header -->
-  <header class="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-    <div class="container flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
-      <div class="flex items-center gap-3">
-        <div class="p-2 bg-primary/10 rounded-lg">
-          <Database class="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <h1 class="text-2xl font-bold tracking-tight">{i18n.t('Volumes')}</h1>
-          <p class="text-xs text-muted-foreground">
-            {volumes.length} {i18n.t('Volumes').toLowerCase()}
+<Container>
+  <PageHeader
+    title={i18n.t('Volumes')}
+    description="Manage persistent storage volumes for your containers."
+    icon={Database}
+  >
+    <div class="flex items-center gap-2">
+      <Button variant="outline" size="sm" onclick={loadVolumes} disabled={isLoading}>
+        <RefreshCw class={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+        {i18n.t('Refresh')}
+      </Button>
+      <Button size="sm" onclick={() => showCreateModal = true}>
+        <Plus class="h-4 w-4 mr-2" />
+        {i18n.t('NewVolume')}
+      </Button>
+      <Button variant="destructive" size="sm" onclick={() => showConfirmPrune = true}>
+        <Trash2 class="h-4 w-4 mr-2" />
+        {i18n.t('Prune')}
+      </Button>
+    </div>
+  </PageHeader>
+
+  <div class="relative max-w-md w-full">
+    <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+    <Input
+      type="search"
+      placeholder={i18n.t('Search') || 'Search volumes...'}
+      class="pl-9"
+      bind:value={searchInput}
+    />
+  </div>
+
+  <div class="space-y-6">
+    {#if isLoading && volumes.length === 0}
+      <div class="grid gap-4">
+        {#each Array(3) as i}
+          <Card.Root class="h-24 animate-pulse bg-muted/20" />
+        {/each}
+      </div>
+    {:else}
+      <VolumeTable
+        volumes={filteredVolumes}
+        sortCol={sortCol}
+        sortDesc={sortDesc}
+        onSort={toggleSort}
+        onCopy={copyToClipboard}
+        onInspect={inspectVolume}
+        onRemove={(v) => { volumeToRemove = v; showConfirmRemove = true; }}
+      />
+
+      {#if filteredVolumes.length === 0 && !isLoading}
+        <div class="flex flex-col items-center justify-center py-20 text-center">
+          <div class="bg-muted p-4 rounded-full mb-4">
+            <HardDrive class="h-10 w-10 text-muted-foreground/50" />
+          </div>
+          <h3 class="text-lg font-medium">{i18n.t('NoVolumesFound')}</h3>
+          <p class="text-sm text-muted-foreground max-w-xs mt-1">
+            Create a new volume to persist your data.
           </p>
         </div>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <Button variant="outline" size="sm" onclick={loadVolumes} disabled={isLoading}>
-          <RefreshCw class={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
-          {i18n.t('Refresh')}
-        </Button>
-        <Button size="sm" onclick={() => showCreateModal = true}>
-          <Plus class="h-4 w-4 mr-2" />
-          {i18n.t('NewVolume')}
-        </Button>
-        <Button variant="destructive" size="sm" onclick={() => showConfirmPrune = true}>
-          <Trash2 class="h-4 w-4 mr-2" />
-          {i18n.t('Prune')}
-        </Button>
-      </div>
-    </div>
-
-    <!-- Filter -->
-    <div class="container pb-4">
-      <div class="relative max-w-md">
-        <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder={i18n.t('Search') || 'Search volumes...'}
-          class="pl-9"
-          bind:value={searchInput}
-        />
-      </div>
-    </div>
-  </header>
-
-  <!-- Content -->
-  <div class="flex-1 overflow-auto">
-    <div class="container py-6">
-      {#if isLoading && volumes.length === 0}
-        <div class="grid gap-4">
-          {#each Array(3) as i}
-            <Card.Root class="h-24 animate-pulse bg-muted/20" />
-          {/each}
-        </div>
-      {:else}
-        <VolumeTable
-          volumes={filteredVolumes}
-          sortCol={sortCol}
-          sortDesc={sortDesc}
-          onSort={toggleSort}
-          onCopy={copyToClipboard}
-          onInspect={inspectVolume}
-          onRemove={(v) => { volumeToRemove = v; showConfirmRemove = true; }}
-        />
-
-        {#if filteredVolumes.length === 0 && !isLoading}
-          <div class="flex flex-col items-center justify-center py-20 text-center">
-            <div class="bg-muted p-4 rounded-full mb-4">
-              <HardDrive class="h-10 w-10 text-muted-foreground/50" />
-            </div>
-            <h3 class="text-lg font-medium">{i18n.t('NoVolumesFound') || 'No volumes found'}</h3>
-            <p class="text-sm text-muted-foreground max-w-xs mt-1">
-              Create a new volume to persist your data.
-            </p>
-          </div>
-        {/if}
       {/if}
-    </div>
+    {/if}
   </div>
-</div>
+</Container>
 
 <!-- Modals -->
 {#if showCreateModal}
@@ -271,6 +256,6 @@
 <InspectModal
   title="Inspect Volume"
   data={inspectData}
-  onClose={() => showInspectModal = false}
+  bind:show={showInspectModal}
 />
 {/if}

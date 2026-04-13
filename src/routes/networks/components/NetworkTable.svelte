@@ -30,7 +30,7 @@
   <Table.Root>
     <Table.Header>
       <Table.Row>
-        <Table.Head class="w-[25%] cursor-pointer" onclick={() => onSort('name')}>
+        <Table.Head class="cursor-pointer" onclick={() => onSort('name')}>
           <div class="flex items-center gap-1">
             {i18n.t('Name')}
             {#if sortCol === 'name'}
@@ -38,7 +38,7 @@
             {/if}
           </div>
         </Table.Head>
-        <Table.Head class="w-[15%] cursor-pointer" onclick={() => onSort('driver')}>
+        <Table.Head class="cursor-pointer" onclick={() => onSort('driver')}>
           <div class="flex items-center gap-1">
             {i18n.t('Driver')}
             {#if sortCol === 'driver'}
@@ -46,7 +46,7 @@
             {/if}
           </div>
         </Table.Head>
-        <Table.Head class="w-[15%] cursor-pointer" onclick={() => onSort('scope')}>
+        <Table.Head class="cursor-pointer" onclick={() => onSort('scope')}>
           <div class="flex items-center gap-1">
             {i18n.t('Scope')}
             {#if sortCol === 'scope'}
@@ -54,8 +54,8 @@
             {/if}
           </div>
         </Table.Head>
-        <Table.Head class="hidden md:table-cell w-[25%]">{i18n.t('Subnet')}</Table.Head>
-        <Table.Head class="text-right w-[20%]">{i18n.t('Actions')}</Table.Head>
+        <Table.Head class="hidden md:table-cell">{i18n.t('Subnet')}</Table.Head>
+        <Table.Head class="text-right">{i18n.t('Actions')}</Table.Head>
       </Table.Row>
     </Table.Header>
     <Table.Body>

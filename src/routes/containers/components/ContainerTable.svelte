@@ -4,7 +4,7 @@
   import * as Table from "$lib/components/ui/table";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
-  import { cn } from "$lib/utils";
+  import StatusBadge from "$lib/components/ui/StatusBadge.svelte";
   import ContainerActions from './ContainerActions.svelte';
   import { Copy, ChevronUp, ChevronDown } from "lucide-svelte";
 
@@ -38,17 +38,13 @@
     onRemove: (c: DockerContainer) => void;
   }>();
 
-  function SortIcon({ col }: { col: string }) {
-    if (sortCol !== col) return null;
-    return sortDesc ? ChevronDown : ChevronUp;
-  }
 </script>
 
 <div class="rounded-md border bg-card">
   <Table.Root>
     <Table.Header>
       <Table.Row>
-        <Table.Head class="w-[30%] cursor-pointer" onclick={() => onSort('name')}>
+        <Table.Head class="cursor-pointer" onclick={() => onSort('name')}>
           <div class="flex items-center gap-1">
             {i18n.t('Name')}
             {#if sortCol === 'name'}
@@ -56,7 +52,7 @@
             {/if}
           </div>
         </Table.Head>
-        <Table.Head class="hidden md:table-cell w-[25%] cursor-pointer" onclick={() => onSort('image')}>
+        <Table.Head class="hidden md:table-cell cursor-pointer" onclick={() => onSort('image')}>
           <div class="flex items-center gap-1">
             {i18n.t('Image')}
             {#if sortCol === 'image'}
@@ -64,8 +60,8 @@
             {/if}
           </div>
         </Table.Head>
-        <Table.Head class="text-center w-[15%]">{i18n.t('Ports')}</Table.Head>
-        <Table.Head class="text-center w-[10%] cursor-pointer" onclick={() => onSort('state')}>
+        <Table.Head class="text-center">{i18n.t('Ports')}</Table.Head>
+        <Table.Head class="text-center cursor-pointer" onclick={() => onSort('state')}>
           <div class="flex items-center justify-center gap-1">
             {i18n.t('State')}
             {#if sortCol === 'state'}
@@ -73,14 +69,14 @@
             {/if}
           </div>
         </Table.Head>
-        <Table.Head class="text-right w-[20%]">{i18n.t('Actions')}</Table.Head>
+        <Table.Head class="text-right">{i18n.t('Actions')}</Table.Head>
       </Table.Row>
     </Table.Header>
     <Table.Body>
       {#each containers as c (c.id)}
         <Table.Row class="group">
           <Table.Cell>
-            <div class="font-medium truncate">{c.name}</div>
+            <div class="font-medium truncate max-w-[200px]">{c.name}</div>
             <div class="flex items-center gap-1.5 mt-0.5">
               <code class="text-[10px] text-muted-foreground font-mono">{c.id.slice(0, 12)}</code>
               <Button
@@ -94,7 +90,7 @@
             </div>
           </Table.Cell>
           <Table.Cell class="hidden md:table-cell">
-            <div class="text-xs text-muted-foreground truncate italic" title={c.image}>
+            <div class="text-xs text-muted-foreground truncate max-w-[200px] italic" title={c.image}>
               {c.compose_service || c.image}
             </div>
           </Table.Cell>
@@ -110,15 +106,7 @@
             {/if}
           </Table.Cell>
           <Table.Cell class="text-center">
-            <Badge
-              variant={c.state === 'running' ? 'default' : 'secondary'}
-              class={cn(
-                "text-[10px] uppercase font-bold px-1.5 h-5",
-                c.state === 'running' ? "bg-green-600 hover:bg-green-700" : ""
-              )}
-            >
-              {c.state}
-            </Badge>
+            <StatusBadge status={c.state} />
           </Table.Cell>
           <Table.Cell class="text-right">
             <ContainerActions

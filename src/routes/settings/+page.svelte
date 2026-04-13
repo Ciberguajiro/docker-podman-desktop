@@ -3,46 +3,44 @@
   import { dockerStore } from "$lib/stores/docker.svelte";
   import { toastStore } from "$lib/stores/toasts.svelte";
   import type { CommandResult } from "$lib/types";
-
-  const dockerInfo = dockerStore.info;
-
   import { i18n } from "$lib/stores/i18n.svelte";
+  import * as Card from "$lib/components/ui/card";
+  import { Label } from "$lib/components/ui/label";
+  import * as Select from "$lib/components/ui/select";
+  import { Switch } from "$lib/components/ui/switch";
+  import { Slider } from "$lib/components/ui/slider";
+  import { Button } from "$lib/components/ui/button";
+  import { Separator } from "$lib/components/ui/separator";
+  import { Badge } from "$lib/components/ui/badge";
+  import PageHeader from "$lib/components/ui/PageHeader.svelte";
+  import Container from "$lib/components/ui/Container.svelte";
+  import {
+    Languages,
+    Palette,
+    RefreshCcw,
+    Trash2,
+    Database,
+    HardDrive,
+    Network,
+    Box,
+    Layers,
+    Info,
+    Terminal,
+    Cpu,
+    MemoryStick,
+    Settings as SettingsIcon
+  } from "lucide-svelte";
+
+  const dockerInfo = $derived(dockerStore.info);
 
   const themes = [
-    "light",
-    "dark",
-    "cupcake",
-    "bumblebee",
-    "emerald",
-    "corporate",
-    "synthwave",
-    "retro",
-    "cyberpunk",
-    "valentine",
-    "halloween",
-    "garden",
-    "forest",
-    "aqua",
-    "lofi",
-    "pastel",
-    "fantasy",
-    "wireframe",
-    "black",
-    "luxury",
-    "dracula",
-    "cmyk",
-    "autumn",
-    "business",
-    "acid",
-    "lemonade",
-    "night",
-    "coffee",
-    "winter",
+    { value: "light", label: "Light" },
+    { value: "dark", label: "Dark" },
   ];
 
   const languages = [
-    { code: "en", name: "English" },
-    { code: "es", name: "Español" },
+    { value: "en", label: "English" },
+    { value: "es", label: "Español" },
   ];
 
   async function prune(type: string) {
@@ -62,198 +60,223 @@
   }
 </script>
 
-<div class="p-6">
-  <h1 class="text-3xl font-bold mb-6">{i18n.t("Settings")}</h1>
+<Container>
+  <PageHeader
+    title={i18n.t("Settings")}
+    description="Configure general appearance and behavior."
+    icon={SettingsIcon}
+  />
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-    <div class="card bg-base-200 shadow-xl border border-base-300">
-      <div class="card-body">
-        <h2 class="card-title text-primary">{i18n.t("AppSettings")}</h2>
-
-        <div class="form-control w-full mt-4">
-          <label class="label" for="language-select"
-            ><span class="label-text">{i18n.t("Language")}</span></label
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <Card.Root>
+      <Card.Header>
+        <Card.Title class="flex items-center gap-2">
+          <Palette class="w-5 h-5 text-primary" />
+          {i18n.t("AppSettings")}
+        </Card.Title>
+        <Card.Description>
+          Configure general appearance and behavior.
+        </Card.Description>
+      </Card.Header>
+      <Card.Content class="space-y-6">
+        <div class="space-y-2">
+          <Label for="language-select">{i18n.t("Language")}</Label>
+          <Select.Root
+            type="single"
+            value={settingsStore.language}
+            onValueChange={(v) => { if (v) settingsStore.language = v; }}
           >
-          <select
-            id="language-select"
-            class="select select-bordered w-full"
-            bind:value={settingsStore.language}
-          >
-            {#each languages as lang}
-              <option value={lang.code}>{lang.name}</option>
-            {/each}
-          </select>
+            <Select.Trigger id="language-select">
+              <div class="flex items-center gap-2">
+                <Languages class="w-4 h-4 opacity-70" />
+                {languages.find(l => l.value === settingsStore.language)?.label || settingsStore.language}
+              </div>
+            </Select.Trigger>
+            <Select.Content>
+              {#each languages as lang}
+                <Select.Item value={lang.value} label={lang.label} />
+              {/each}
+            </Select.Content>
+          </Select.Root>
         </div>
 
-        <div class="form-control w-full">
-          <label class="label" for="auto-refresh-toggle">
-            <span class="label-text">{i18n.t("AutoRefresh")}</span>
-            <input
-              id="auto-refresh-toggle"
-              type="checkbox"
-              class="toggle toggle-primary"
-              bind:checked={settingsStore.autoRefresh}
-            />
-          </label>
+        <div class="space-y-2">
+          <Label for="theme-select">{i18n.t("Theme")}</Label>
+          <Select.Root
+            type="single"
+            value={settingsStore.theme}
+            onValueChange={(v) => { if (v) settingsStore.theme = v; }}
+          >
+            <Select.Trigger id="theme-select">
+              <div class="flex items-center gap-2">
+                <Palette class="w-4 h-4 opacity-70" />
+                {themes.find(t => t.value === settingsStore.theme)?.label || settingsStore.theme}
+              </div>
+            </Select.Trigger>
+            <Select.Content>
+              {#each themes as theme}
+                <Select.Item value={theme.value} label={theme.label} />
+              {/each}
+            </Select.Content>
+          </Select.Root>
+        </div>
+
+        <Separator />
+
+        <div class="flex items-center justify-between">
+          <div class="space-y-0.5">
+            <Label for="auto-refresh">{i18n.t("AutoRefresh")}</Label>
+            <p class="text-sm text-muted-foreground">Automatically update data from the engine.</p>
+          </div>
+          <Switch
+            id="auto-refresh"
+            bind:checked={settingsStore.autoRefresh}
+          />
         </div>
 
         {#if settingsStore.autoRefresh}
-          <div class="form-control w-full">
-            <label class="label" for="refresh-interval">
-              <span class="label-text"
-                >{i18n.t("RefreshInterval")} ({i18n.t("Seconds")})</span
-              >
-              <span class="label-text-alt"
-                >{settingsStore.refreshInterval}s</span
-              >
-            </label>
-            <input
-              id="refresh-interval"
-              type="range"
-              min="5"
-              max="60"
-              step="5"
-              class="range range-primary range-sm"
-              bind:value={settingsStore.refreshInterval}
-            />
-            <div class="w-full flex justify-between text-xs px-2 mt-1">
-              <span>5s</span>
-              <span>30s</span>
-              <span>60s</span>
+          <div class="space-y-4 pt-2">
+            <div class="flex items-center justify-between">
+              <Label>{i18n.t("RefreshInterval")} ({i18n.t("Seconds")})</Label>
+              <Badge variant="secondary">{settingsStore.refreshInterval}s</Badge>
             </div>
+            <Slider
+              type="single"
+              value={settingsStore.refreshInterval}
+              min={5}
+              max={60}
+              step={5}
+              onValueChange={(v: number) => settingsStore.refreshInterval = v}
+            />
           </div>
         {/if}
+      </Card.Content>
+    </Card.Root>
 
-        <div class="divider"></div>
-
-        <div class="form-control w-full mt-4">
-          <label class="label" for="theme-select"
-            ><span class="label-text">{i18n.t("Theme")}</span></label
-          >
-          <select
-            id="theme-select"
-            class="select select-bordered w-full"
-            bind:value={settingsStore.theme}
-          >
-            {#each themes as theme}
-              <option value={theme}>{theme}</option>
-            {/each}
-          </select>
+    <Card.Root>
+      <Card.Header>
+        <Card.Title class="flex items-center gap-2 text-destructive">
+          <Trash2 class="w-5 h-5" />
+          {i18n.t("SystemCleanup")}
+        </Card.Title>
+        <Card.Description>
+          {i18n.t("PruneAdvice") || "Remove unused Docker resources to free up space."}
+        </Card.Description>
+      </Card.Header>
+      <Card.Content class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Button variant="outline" class="justify-start gap-2" onclick={() => prune("containers")}>
+            <Box class="w-4 h-4" />
+            {i18n.t("PruneContainers")}
+          </Button>
+          <Button variant="outline" class="justify-start gap-2" onclick={() => prune("images")}>
+            <Layers class="w-4 h-4" />
+            {i18n.t("PruneImages")}
+          </Button>
+          <Button variant="outline" class="justify-start gap-2" onclick={() => prune("volumes")}>
+            <Database class="w-4 h-4" />
+            {i18n.t("PruneVolumes")}
+          </Button>
+          <Button variant="outline" class="justify-start gap-2" onclick={() => prune("networks")}>
+            <Network class="w-4 h-4" />
+            {i18n.t("PruneNetworks")}
+          </Button>
         </div>
-      </div>
-    </div>
+        <Separator />
+        <Button variant="destructive" class="w-full gap-2" onclick={() => prune("system")}>
+          <Trash2 class="w-4 h-4" />
+          {i18n.t("PruneSystem") || "Prune Everything"}
+        </Button>
+      </Card.Content>
+    </Card.Root>
 
-    <div class="card bg-base-200 shadow-xl border border-base-300">
-      <div class="card-body">
-        <h2 class="card-title text-error">{i18n.t("SystemCleanup")}</h2>
-        <p class="text-xs opacity-70 mb-4 text-pretty">
-          {i18n.t("PruneAdvice") ||
-            "Remove unused Docker resources to free up space."}
-        </p>
+    <Card.Root class="md:col-span-2">
+      <Card.Header>
+        <Card.Title class="flex items-center gap-2">
+          <Info class="w-5 h-5 text-primary" />
+          {i18n.t("DockerInfo")}
+        </Card.Title>
+        <Card.Description>
+          Information about the connected engine.
+        </Card.Description>
+      </Card.Header>
+      <Card.Content>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="space-y-4">
+            <div class="flex items-start gap-3">
+              <Terminal class="w-4 h-4 mt-1 text-muted-foreground" />
+              <div>
+                <p class="text-sm font-medium leading-none mb-1">{i18n.t("ServerVersion")}</p>
+                <p class="text-sm text-muted-foreground font-mono">{dockerInfo.server_version}</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <Box class="w-4 h-4 mt-1 text-muted-foreground" />
+              <div>
+                <p class="text-sm font-medium leading-none mb-1">{i18n.t("OSType")}</p>
+                <p class="text-sm text-muted-foreground">{dockerInfo.os_type} ({dockerInfo.operating_system})</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <Cpu class="w-4 h-4 mt-1 text-muted-foreground" />
+              <div>
+                <p class="text-sm font-medium leading-none mb-1">{i18n.t("Architecture")} / CPUs</p>
+                <p class="text-sm text-muted-foreground">{dockerInfo.architecture} / {dockerInfo.cpus} CPUs</p>
+              </div>
+            </div>
+          </div>
 
-        <div class="grid grid-cols-2 gap-2">
-          <button
-            class="btn btn-outline btn-error btn-sm"
-            onclick={() => prune("containers")}
-          >
-            🗑️ {i18n.t("PruneContainers")}
-          </button>
-          <button
-            class="btn btn-outline btn-error btn-sm"
-            onclick={() => prune("images")}
-          >
-            🖼️ {i18n.t("PruneImages")}
-          </button>
-          <button
-            class="btn btn-outline btn-error btn-sm"
-            onclick={() => prune("volumes")}
-          >
-            💾 {i18n.t("PruneVolumes")}
-          </button>
-          <button
-            class="btn btn-outline btn-error btn-sm"
-            onclick={() => prune("networks")}
-          >
-            🌐 {i18n.t("PruneNetworks")}
-          </button>
+          <div class="space-y-4">
+            <div class="flex items-start gap-3">
+              <MemoryStick class="w-4 h-4 mt-1 text-muted-foreground" />
+              <div>
+                <p class="text-sm font-medium leading-none mb-1">{i18n.t("Memory")}</p>
+                <p class="text-sm text-muted-foreground">{dockerInfo.memory}</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <HardDrive class="w-4 h-4 mt-1 text-muted-foreground" />
+              <div>
+                <p class="text-sm font-medium leading-none mb-1">{i18n.t("StorageDriver")}</p>
+                <p class="text-sm text-muted-foreground font-mono">{dockerInfo.storage_driver}</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <RefreshCcw class="w-4 h-4 mt-1 text-muted-foreground" />
+              <div>
+                <p class="text-sm font-medium leading-none mb-1">{i18n.t("KernelVersion")}</p>
+                <p class="text-sm text-muted-foreground font-mono">{dockerInfo.kernel_version}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-start gap-3">
+              <Box class="w-4 h-4 mt-1 text-muted-foreground" />
+              <div>
+                <p class="text-sm font-medium leading-none mb-1">Cgroup Driver</p>
+                <p class="text-sm text-muted-foreground">{dockerInfo.cgroup_driver} (v{dockerInfo.cgroup_version})</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <Terminal class="w-4 h-4 mt-1 text-muted-foreground" />
+              <div>
+                <p class="text-sm font-medium leading-none mb-1">Logging Driver</p>
+                <p class="text-sm text-muted-foreground">{dockerInfo.logging_driver}</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <HardDrive class="w-4 h-4 mt-1 text-muted-foreground" />
+              <div>
+                <p class="text-sm font-medium leading-none mb-1">Root Directory</p>
+                <p class="text-sm text-muted-foreground truncate max-w-[200px]" title={dockerInfo.docker_root_dir}>
+                  {dockerInfo.docker_root_dir}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <div class="divider"></div>
-        <button
-          class="btn btn-error btn-sm w-full"
-          onclick={() => prune("system")}
-        >
-          🔥 {i18n.t("PruneSystem") || "Prune Everything"}
-        </button>
-      </div>
-    </div>
-
-    <div class="card bg-base-200 shadow-xl border border-base-300">
-      <div class="card-body">
-        <h2 class="card-title text-secondary">{i18n.t("DockerInfo")}</h2>
-
-        <div class="overflow-x-auto mt-4">
-          <table class="table table-xs">
-            <tbody>
-              <tr
-                ><td class="font-bold">{i18n.t("ServerVersion")}</td><td
-                  >{dockerInfo.server_version}</td
-                ></tr
-              >
-              <tr
-                ><td class="font-bold">{i18n.t("OSType")}</td><td
-                  >{dockerInfo.os_type}</td
-                ></tr
-              >
-              <tr
-                ><td class="font-bold">{i18n.t("OperatingSystem")}</td><td
-                  >{dockerInfo.operating_system}</td
-                ></tr
-              >
-              <tr
-                ><td class="font-bold">{i18n.t("Architecture")}</td><td
-                  >{dockerInfo.architecture}</td
-                ></tr
-              >
-              <tr
-                ><td class="font-bold">{i18n.t("KernelVersion")}</td><td
-                  >{dockerInfo.kernel_version}</td
-                ></tr
-              >
-              <tr
-                ><td class="font-bold">{i18n.t("CPUs")}</td><td
-                  >{dockerInfo.cpus}</td
-                ></tr
-              >
-              <tr
-                ><td class="font-bold">{i18n.t("Memory")}</td><td
-                  >{dockerInfo.memory}</td
-                ></tr
-              >
-              <tr
-                ><td class="font-bold">{i18n.t("StorageDriver")}</td><td
-                  >{dockerInfo.storage_driver}</td
-                ></tr
-              >
-              <tr
-                ><td class="font-bold">{i18n.t("CgroupDriver")}</td><td
-                  >{dockerInfo.cgroup_driver} (v{dockerInfo.cgroup_version})</td
-                ></tr
-              >
-              <tr
-                ><td class="font-bold">{i18n.t("LoggingDriver")}</td><td
-                  >{dockerInfo.logging_driver}</td
-                ></tr
-              >
-              <tr
-                ><td class="font-bold">{i18n.t("DockerRootDir")}</td><td
-                  >{dockerInfo.docker_root_dir}</td
-                ></tr
-              >
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      </Card.Content>
+    </Card.Root>
   </div>
-</div>
+</Container>

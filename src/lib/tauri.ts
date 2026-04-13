@@ -2,6 +2,7 @@ import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import { listen as tauriListen, type UnlistenFn } from '@tauri-apps/api/event';
 
 export async function invoke<T>(cmd: string, args: Record<string, any> = {}): Promise<T> {
+  // @ts-ignore
   if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__) {
     console.warn(`Tauri not detected. Mocking response for ${cmd}`);
     if (cmd === 'check_engine_cli_command') return true as any;
@@ -52,6 +53,7 @@ export async function invoke<T>(cmd: string, args: Record<string, any> = {}): Pr
 }
 
 export async function listen<T>(event: string, handler: (event: { payload: T }) => void): Promise<UnlistenFn> {
+  // @ts-ignore
   if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__) {
     console.warn(`Tauri not detected. Mocking listener for ${event}`);
     return () => {};

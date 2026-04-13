@@ -18,9 +18,9 @@
 
 <div class="flex items-center justify-end gap-1">
   <Tooltip.Root>
-    <Tooltip.Trigger asChild>
-      {#snippet children({ builder })}
-        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(network)}>
+    <Tooltip.Trigger>
+      {#snippet child({ props })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" {...props} onclick={() => onInspect(network)}>
           <Search class="h-4 w-4" />
         </Button>
       {/snippet}
@@ -29,9 +29,9 @@
   </Tooltip.Root>
 
   <Tooltip.Root>
-    <Tooltip.Trigger asChild>
-      {#snippet children({ builder })}
-        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(network)}>
+    <Tooltip.Trigger>
+      {#snippet child({ props })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" {...props} onclick={() => onRemove(network)}>
           <Trash2 class="h-4 w-4" />
         </Button>
       {/snippet}

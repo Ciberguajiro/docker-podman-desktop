@@ -37,7 +37,7 @@
   <Table.Root>
     <Table.Header>
       <Table.Row>
-        <Table.Head class="w-[30%] cursor-pointer" onclick={() => onSort('repository')}>
+        <Table.Head class="cursor-pointer" onclick={() => onSort('repository')}>
           <div class="flex items-center gap-1">
             {i18n.t('Repository')}
             {#if sortCol === 'repository'}
@@ -45,7 +45,7 @@
             {/if}
           </div>
         </Table.Head>
-        <Table.Head class="hidden md:table-cell w-[15%] cursor-pointer" onclick={() => onSort('tag')}>
+        <Table.Head class="hidden md:table-cell cursor-pointer" onclick={() => onSort('tag')}>
           <div class="flex items-center gap-1">
             {i18n.t('Tag')}
             {#if sortCol === 'tag'}
@@ -53,7 +53,7 @@
             {/if}
           </div>
         </Table.Head>
-        <Table.Head class="hidden lg:table-cell w-[15%] cursor-pointer" onclick={() => onSort('id')}>
+        <Table.Head class="hidden lg:table-cell cursor-pointer" onclick={() => onSort('id')}>
           <div class="flex items-center gap-1">
             {i18n.t('ImageID')}
             {#if sortCol === 'id'}
@@ -61,7 +61,7 @@
             {/if}
           </div>
         </Table.Head>
-        <Table.Head class="w-[10%] cursor-pointer" onclick={() => onSort('size')}>
+        <Table.Head class="cursor-pointer" onclick={() => onSort('size')}>
           <div class="flex items-center gap-1">
             {i18n.t('Size')}
             {#if sortCol === 'size'}
@@ -69,7 +69,7 @@
             {/if}
           </div>
         </Table.Head>
-        <Table.Head class="hidden sm:table-cell w-[15%] cursor-pointer" onclick={() => onSort('created')}>
+        <Table.Head class="hidden sm:table-cell cursor-pointer" onclick={() => onSort('created')}>
           <div class="flex items-center gap-1">
             {i18n.t('Created')}
             {#if sortCol === 'created'}
@@ -77,7 +77,7 @@
             {/if}
           </div>
         </Table.Head>
-        <Table.Head class="text-right w-[15%]">{i18n.t('Actions')}</Table.Head>
+        <Table.Head class="text-right">{i18n.t('Actions')}</Table.Head>
       </Table.Row>
     </Table.Header>
     <Table.Body>
@@ -107,11 +107,11 @@
           <Table.Cell class="text-right">
             <ImageActions
               image={img}
-              {onRun}
-              {onTag}
-              {onInspect}
-              {onHistory}
-              {onRemove}
+              onRun={onRun}
+              onTag={onTag}
+              onInspect={onInspect}
+              onHistory={onHistory}
+              onRemove={onRemove}
             />
           </Table.Cell>
         </Table.Row>

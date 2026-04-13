@@ -14,6 +14,8 @@
   import * as Card from "$lib/components/ui/card";
   import * as Select from "$lib/components/ui/select";
   import { Label } from "$lib/components/ui/label";
+  import PageHeader from "$lib/components/ui/PageHeader.svelte";
+  import Container from "$lib/components/ui/Container.svelte";
 
   import NetworkTable from './components/NetworkTable.svelte';
   import {
@@ -150,87 +152,70 @@
   }
 </script>
 
-<div class="h-full flex flex-col bg-background">
-  <!-- Header -->
-  <header class="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-    <div class="container flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
-      <div class="flex items-center gap-3">
-        <div class="p-2 bg-primary/10 rounded-lg">
-          <Globe class="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <h1 class="text-2xl font-bold tracking-tight">{i18n.t('Networks')}</h1>
-          <p class="text-xs text-muted-foreground">
-            {networks.length} {i18n.t('Networks').toLowerCase()}
+<Container>
+  <PageHeader
+    title={i18n.t('Networks')}
+    description="Manage and configure virtual networks for container communication."
+    icon={Globe}
+  >
+    <div class="flex items-center gap-2">
+      <Button variant="outline" size="sm" onclick={loadNetworks} disabled={isLoading}>
+        <RefreshCw class={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+        {i18n.t('Refresh')}
+      </Button>
+      <Button size="sm" onclick={() => showCreateModal = true}>
+        <Plus class="h-4 w-4 mr-2" />
+        {i18n.t('NewNetwork')}
+      </Button>
+      <Button variant="destructive" size="sm" onclick={() => showConfirmPrune = true}>
+        <Trash2 class="h-4 w-4 mr-2" />
+        {i18n.t('Prune')}
+      </Button>
+    </div>
+  </PageHeader>
+
+  <div class="relative max-w-md w-full">
+    <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+    <Input
+      type="search"
+      placeholder={i18n.t('SearchNetworks')}
+      class="pl-9"
+      bind:value={searchInput}
+    />
+  </div>
+
+  <div class="space-y-6">
+    {#if isLoading && networks.length === 0}
+      <div class="grid gap-4">
+        {#each Array(3) as _}
+          <Card.Root class="h-24 animate-pulse bg-muted/20" />
+        {/each}
+      </div>
+    {:else}
+      <NetworkTable
+        networks={filteredNetworks}
+        sortCol={sortCol}
+        sortDesc={sortDesc}
+        onSort={toggleSort}
+        onCopy={copyToClipboard}
+        onInspect={inspectNetwork}
+        onRemove={(n) => { networkToRemove = n; showConfirmRemove = true; }}
+      />
+
+      {#if filteredNetworks.length === 0 && !isLoading}
+        <div class="flex flex-col items-center justify-center py-20 text-center">
+          <div class="bg-muted p-4 rounded-full mb-4">
+            <NetworkIcon class="h-10 w-10 text-muted-foreground/50" />
+          </div>
+          <h3 class="text-lg font-medium">{i18n.t('NoNetworksFound')}</h3>
+          <p class="text-sm text-muted-foreground max-w-xs mt-1">
+            Create a new network to connect your containers.
           </p>
         </div>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <Button variant="outline" size="sm" onclick={loadNetworks} disabled={isLoading}>
-          <RefreshCw class={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
-          {i18n.t('Refresh')}
-        </Button>
-        <Button size="sm" onclick={() => showCreateModal = true}>
-          <Plus class="h-4 w-4 mr-2" />
-          {i18n.t('NewNetwork')}
-        </Button>
-        <Button variant="destructive" size="sm" onclick={() => showConfirmPrune = true}>
-          <Trash2 class="h-4 w-4 mr-2" />
-          {i18n.t('Prune')}
-        </Button>
-      </div>
-    </div>
-
-    <!-- Filter -->
-    <div class="container pb-4">
-      <div class="relative max-w-md">
-        <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder={i18n.t('SearchNetworks') || 'Search networks...'}
-          class="pl-9"
-          bind:value={searchInput}
-        />
-      </div>
-    </div>
-  </header>
-
-  <!-- Content -->
-  <div class="flex-1 overflow-auto">
-    <div class="container py-6">
-      {#if isLoading && networks.length === 0}
-        <div class="grid gap-4">
-          {#each Array(3) as _}
-            <Card.Root class="h-24 animate-pulse bg-muted/20" />
-          {/each}
-        </div>
-      {:else}
-        <NetworkTable
-          networks={filteredNetworks}
-          sortCol={sortCol}
-          sortDesc={sortDesc}
-          onSort={toggleSort}
-          onCopy={copyToClipboard}
-          onInspect={inspectNetwork}
-          onRemove={(n) => { networkToRemove = n; showConfirmRemove = true; }}
-        />
-
-        {#if filteredNetworks.length === 0 && !isLoading}
-          <div class="flex flex-col items-center justify-center py-20 text-center">
-            <div class="bg-muted p-4 rounded-full mb-4">
-              <NetworkIcon class="h-10 w-10 text-muted-foreground/50" />
-            </div>
-            <h3 class="text-lg font-medium">{i18n.t('NoNetworksFound')}</h3>
-            <p class="text-sm text-muted-foreground max-w-xs mt-1">
-              Create a new network to connect your containers.
-            </p>
-          </div>
-        {/if}
       {/if}
-    </div>
+    {/if}
   </div>
-</div>
+</Container>
 
 <!-- Modals -->
 {#if showCreateModal}
@@ -290,6 +275,6 @@
 <InspectModal
   title="Inspect Network"
   data={inspectData}
-  onClose={() => showInspectModal = false}
+  bind:show={showInspectModal}
 />
 {/if}

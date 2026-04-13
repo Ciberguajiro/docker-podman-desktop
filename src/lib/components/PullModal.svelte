@@ -3,14 +3,19 @@
   import { dockerStore } from '$lib/stores/docker.svelte';
   import { toastStore } from '$lib/stores/toasts.svelte';
   import type { PullEvent, CommandResult } from '$lib/types';
+  import * as Dialog from "$lib/components/ui/dialog";
+  import { Button } from "$lib/components/ui/button";
+  import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
+  import { Download, Loader2, XCircle } from "lucide-svelte";
 
-  let { show = $bindable(), image = '', onComplete } = $props<{
-    show: boolean;
+  let { show = $bindable(true), image = '', onComplete } = $props<{
+    show?: boolean;
     image?: string;
     onComplete?: () => void;
   }>();
 
-  let imageName = $state(image);
+  let imageName = $state('');
   let isPulling = $state(false);
   let logs = $state<string[]>([]);
   let logContainer = $state<HTMLDivElement>();
@@ -78,68 +83,63 @@
     imageName = '';
     logs = [];
   }
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && show) {
-      close();
-    }
-  }
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<Dialog.Root bind:open={show}>
+  <Dialog.Content class="sm:max-w-[600px] flex flex-col max-h-[90vh]">
+    <Dialog.Header>
+      <div class="flex items-center gap-2">
+        <Download class="w-5 h-5 text-primary" />
+        <Dialog.Title>Pull Image</Dialog.Title>
+      </div>
+    </Dialog.Header>
 
-{#if show}
-  <div class="modal modal-open">
-    <div class="modal-box w-11/12 max-w-3xl">
-      <h3 class="text-lg font-bold">Pull Image</h3>
-      <div class="py-4">
-        <div class="form-control w-full">
-          <label class="label" for="imageName">
-            <span class="label-text">Image Name (e.g. nginx:latest)</span>
-          </label>
-          <div class="flex gap-2">
-            <input
-              id="imageName"
-              type="text"
-              placeholder="repository:tag"
-              class="input input-bordered w-full"
-              bind:value={imageName}
-              disabled={isPulling}
-              onkeydown={(e) => e.key === 'Enter' && handlePull()}
-            />
-            <button
-              class="btn btn-primary"
-              onclick={handlePull}
-              disabled={isPulling || !imageName}
-            >
-              {#if isPulling}
-                <span class="loading loading-spinner"></span>
-              {/if}
-              Pull
-            </button>
-          </div>
+    <div class="space-y-4 py-4">
+      <div class="space-y-2">
+        <Label for="imageName">Image Name (e.g. nginx:latest)</Label>
+        <div class="flex gap-2">
+          <Input
+            id="imageName"
+            type="text"
+            placeholder="repository:tag"
+            bind:value={imageName}
+            disabled={isPulling}
+            onkeydown={(e: KeyboardEvent) => e.key === 'Enter' && handlePull()}
+          />
+          <Button
+            onclick={handlePull}
+            disabled={isPulling || !imageName}
+          >
+            {#if isPulling}
+              <Loader2 class="w-4 h-4 mr-2 animate-spin" />
+            {/if}
+            Pull
+          </Button>
         </div>
+      </div>
 
-        {#if logs.length > 0}
-          <div class="mt-4">
-            <div
-              bind:this={logContainer}
-              class="bg-base-300 rounded p-4 h-64 overflow-y-auto font-mono text-xs whitespace-pre-wrap"
-            >
-              {#each logs as log}
-                <div class="border-b border-base-100 py-1">{log}</div>
-              {/each}
-            </div>
-          </div>
-        {/if}
-      </div>
-      <div class="modal-action">
-        {#if isPulling}
-          <button class="btn btn-error btn-outline" onclick={cancelPull}>Cancel Pull</button>
-        {/if}
-        <button class="btn" onclick={close} disabled={isPulling}>Close</button>
-      </div>
+      {#if logs.length > 0}
+        <div
+          bind:this={logContainer}
+          class="bg-muted rounded-lg border p-4 h-64 overflow-y-auto font-mono text-xs whitespace-pre-wrap shadow-inner"
+        >
+          {#each logs as log}
+            <div class="border-b border-border/50 py-1 last:border-0">{log}</div>
+          {/each}
+        </div>
+      {/if}
     </div>
-    <div class="modal-backdrop" role="presentation" onclick={close}></div>
-  </div>
-{/if}
+
+    <Dialog.Footer class="gap-2 sm:gap-0">
+      {#if isPulling}
+        <Button variant="destructive" onclick={cancelPull} class="gap-2">
+          <XCircle class="w-4 h-4" />
+          Cancel Pull
+        </Button>
+      {/if}
+      <Button variant="ghost" onclick={close} disabled={isPulling}>
+        Close
+      </Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>
