@@ -40,32 +40,32 @@
 <div class="flex items-center justify-end gap-1">
   {#if container.state !== 'running'}
     <Tooltip.Root>
-      <Tooltip.Trigger asChild>
-        {#snippet children({ builder })}
-          <Button variant="ghost" size="icon" class="h-8 w-8 text-green-600" builders={[builder]} onclick={() => onStart(container.id)}>
+      <Tooltip.Trigger>
+        {#snippet child({ props })}
+          <Button variant="ghost" size="icon" class="h-8 w-8 text-green-600" {...props} onclick={() => onStart(container.id)}>
             <Play class="h-4 w-4" />
           </Button>
         {/snippet}
       </Tooltip.Trigger>
-      <Tooltip.Content>{i18n.t('Start')}</Tooltip.Content>
+      <Tooltip.Content>{i18n.t('Run') || 'Start'}</Tooltip.Content>
     </Tooltip.Root>
   {:else}
     <Tooltip.Root>
-      <Tooltip.Trigger asChild>
-        {#snippet children({ builder })}
-          <Button variant="ghost" size="icon" class="h-8 w-8 text-amber-600" builders={[builder]} onclick={() => onStop(container.id)}>
+      <Tooltip.Trigger>
+        {#snippet child({ props })}
+          <Button variant="ghost" size="icon" class="h-8 w-8 text-amber-600" {...props} onclick={() => onStop(container.id)}>
             <Square class="h-4 w-4" />
           </Button>
         {/snippet}
       </Tooltip.Trigger>
-      <Tooltip.Content>{i18n.t('Stop')}</Tooltip.Content>
+      <Tooltip.Content>{i18n.t('Close') || 'Stop'}</Tooltip.Content>
     </Tooltip.Root>
   {/if}
 
   <Tooltip.Root>
-    <Tooltip.Trigger asChild>
-      {#snippet children({ builder })}
-        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} disabled={container.state !== 'running'} onclick={() => onExec(container)}>
+    <Tooltip.Trigger>
+      {#snippet child({ props })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" {...props} disabled={container.state !== 'running'} onclick={() => onExec(container)}>
           <Terminal class="h-4 w-4" />
         </Button>
       {/snippet}
@@ -74,9 +74,9 @@
   </Tooltip.Root>
 
   <Tooltip.Root>
-    <Tooltip.Trigger asChild>
-      {#snippet children({ builder })}
-        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} disabled={container.state !== 'running'} onclick={() => onFiles(container)}>
+    <Tooltip.Trigger>
+      {#snippet child({ props })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" {...props} disabled={container.state !== 'running'} onclick={() => onFiles(container)}>
           <Folder class="h-4 w-4" />
         </Button>
       {/snippet}
@@ -85,9 +85,9 @@
   </Tooltip.Root>
 
   <Tooltip.Root>
-    <Tooltip.Trigger asChild>
-      {#snippet children({ builder })}
-        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onLogs(container)}>
+    <Tooltip.Trigger>
+      {#snippet child({ props })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" {...props} onclick={() => onLogs(container)}>
           <ScrollText class="h-4 w-4" />
         </Button>
       {/snippet}
@@ -96,9 +96,9 @@
   </Tooltip.Root>
 
   <Tooltip.Root>
-    <Tooltip.Trigger asChild>
-      {#snippet children({ builder })}
-        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onExport(container)}>
+    <Tooltip.Trigger>
+      {#snippet child({ props })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" {...props} onclick={() => onExport(container)}>
           <ExternalLink class="h-4 w-4" />
         </Button>
       {/snippet}
@@ -107,9 +107,9 @@
   </Tooltip.Root>
 
   <Tooltip.Root>
-    <Tooltip.Trigger asChild>
-      {#snippet children({ builder })}
-        <Button variant="ghost" size="icon" class="h-8 w-8" builders={[builder]} onclick={() => onInspect(container)}>
+    <Tooltip.Trigger>
+      {#snippet child({ props })}
+        <Button variant="ghost" size="icon" class="h-8 w-8" {...props} onclick={() => onInspect(container)}>
           <Search class="h-4 w-4" />
         </Button>
       {/snippet}
@@ -118,9 +118,9 @@
   </Tooltip.Root>
 
   <Tooltip.Root>
-    <Tooltip.Trigger asChild>
-      {#snippet children({ builder })}
-        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" builders={[builder]} onclick={() => onRemove(container)}>
+    <Tooltip.Trigger>
+      {#snippet child({ props })}
+        <Button variant="ghost" size="icon" class="h-8 w-8 text-destructive hover:text-destructive" {...props} onclick={() => onRemove(container)}>
           <Trash2 class="h-4 w-4" />
         </Button>
       {/snippet}

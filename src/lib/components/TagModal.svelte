@@ -3,9 +3,14 @@
   import { toastStore } from '$lib/stores/toasts.svelte';
   import { sanitize } from '$lib/utils';
   import type { CommandResult, DockerImage } from '$lib/types';
+  import * as Dialog from "$lib/components/ui/dialog";
+  import { Button } from "$lib/components/ui/button";
+  import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
+  import { Tag, Loader2 } from "lucide-svelte";
 
-  let { show = $bindable(false), image, onComplete } = $props<{
-    show: boolean;
+  let { show = $bindable(true), image, onComplete } = $props<{
+    show?: boolean;
     image: DockerImage | null;
     onComplete: () => void;
   }>();
@@ -50,41 +55,56 @@
   function close() {
     show = false;
   }
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && show) {
-      close();
-    }
-  }
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
-
-{#if show && image}
-  <div class="modal modal-open">
-    <div class="modal-box">
-      <h3 class="font-bold text-lg">Tag Image</h3>
-      <div class="py-4 space-y-4">
-        <p class="text-sm opacity-70">Source: <span class="font-mono">{image.id.slice(0, 12)}</span></p>
-
-        <div class="form-control w-full">
-          <label class="label" for="tag-repo"><span class="label-text">Repository</span></label>
-          <input id="tag-repo" type="text" placeholder="e.g. my-image" class="input input-bordered w-full" bind:value={repository} />
-        </div>
-
-        <div class="form-control w-full">
-          <label class="label" for="tag-name"><span class="label-text">Tag</span></label>
-          <input id="tag-name" type="text" placeholder="e.g. latest, v1.0" class="input input-bordered w-full" bind:value={tag} />
-        </div>
+<Dialog.Root bind:open={show}>
+  <Dialog.Content class="sm:max-w-[425px]">
+    <Dialog.Header>
+      <div class="flex items-center gap-2">
+        <Tag class="w-5 h-5 text-primary" />
+        <Dialog.Title>Tag Image</Dialog.Title>
       </div>
-      <div class="modal-action">
-        <button class="btn" onclick={close}>Cancel</button>
-        <button class="btn btn-primary" onclick={handleSubmit} disabled={isSubmitting || !repository}>
-          {#if isSubmitting}<span class="loading loading-spinner loading-xs"></span>{/if}
-          Tag Image
-        </button>
+      {#if image}
+        <Dialog.Description>
+          Create a new tag for image <code class="bg-muted px-1 rounded font-mono text-xs">{image.id.slice(0, 12)}</code>
+        </Dialog.Description>
+      {/if}
+    </Dialog.Header>
+
+    <div class="space-y-4 py-4">
+      <div class="space-y-2">
+        <Label for="tag-repo">Repository</Label>
+        <Input
+          id="tag-repo"
+          type="text"
+          placeholder="e.g. my-image"
+          bind:value={repository}
+          disabled={isSubmitting}
+        />
+      </div>
+
+      <div class="space-y-2">
+        <Label for="tag-name">Tag</Label>
+        <Input
+          id="tag-name"
+          type="text"
+          placeholder="e.g. latest, v1.0"
+          bind:value={tag}
+          disabled={isSubmitting}
+        />
       </div>
     </div>
-    <div class="modal-backdrop" role="presentation" onclick={close}></div>
-  </div>
-{/if}
+
+    <Dialog.Footer>
+      <Button variant="ghost" onclick={close} disabled={isSubmitting}>
+        Cancel
+      </Button>
+      <Button onclick={handleSubmit} disabled={isSubmitting || !repository}>
+        {#if isSubmitting}
+          <Loader2 class="w-4 h-4 mr-2 animate-spin" />
+        {/if}
+        Tag Image
+      </Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>

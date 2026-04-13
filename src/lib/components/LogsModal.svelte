@@ -4,10 +4,15 @@
   import { dockerStore } from '$lib/stores/docker.svelte';
   import { toastStore } from '$lib/stores/toasts.svelte';
   import type { LogEvent, CommandResult } from '$lib/types';
-  import { onMount } from 'svelte';
+  import * as Dialog from "$lib/components/ui/dialog";
+  import { Button } from "$lib/components/ui/button";
+  import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
+  import { ScrollText, Search, RefreshCw, Loader2 } from "lucide-svelte";
+  import { cn } from "$lib/utils";
 
-  let { show = $bindable(false), containerId, containerName } = $props<{
-    show: boolean;
+  let { show = $bindable(true), containerId, containerName } = $props<{
+    show?: boolean;
     containerId: string;
     containerName: string;
   }>();
@@ -75,71 +80,74 @@
     }
     await invoke('docker_stop_logs_stream');
   }
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && show) {
-      close();
-    }
-  }
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
-
-{#if show}
-  <div class="modal modal-open">
-    <div class="modal-box w-11/12 max-w-5xl">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold text-lg">{i18n.t('Logs')}: {containerName}</h3>
+<Dialog.Root bind:open={show}>
+  <Dialog.Content class="sm:max-w-[900px] flex flex-col max-h-[90vh]">
+    <Dialog.Header>
+      <div class="flex items-center justify-between mr-8">
         <div class="flex items-center gap-2">
-          <div class="relative">
-            <input
+          <ScrollText class="w-5 h-5 text-primary" />
+          <Dialog.Title>{i18n.t('Logs')}: {containerName}</Dialog.Title>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="relative w-48">
+            <Search class="absolute left-2 top-2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
               type="text"
               placeholder={i18n.t('Search')}
-              class="input input-bordered input-xs w-48"
+              class="h-8 pl-8 text-xs"
               bind:value={logSearch}
             />
-            {#if logSearch}
-              <button class="absolute right-1 top-1 text-[10px] opacity-50 hover:opacity-100" onclick={() => logSearch = ''}>✕</button>
-            {/if}
           </div>
-          <label class="label text-xs" for="tail-input">Tail:</label>
-          <input
-            id="tail-input"
-            type="number"
-            class="input input-bordered input-xs w-20"
-            bind:value={tail}
-            min="1"
-          />
-          <button class="btn btn-ghost btn-xs" onclick={startStreaming} disabled={isLoading}>
+          <div class="flex items-center gap-2">
+            <Label for="tail-input" class="text-xs whitespace-nowrap">Tail:</Label>
+            <Input
+              id="tail-input"
+              type="number"
+              class="h-8 w-16 text-xs"
+              bind:value={tail}
+              min="1"
+            />
+          </div>
+          <Button variant="outline" size="icon" class="h-8 w-8" onclick={startStreaming} disabled={isLoading}>
             {#if isLoading}
-              <span class="loading loading-spinner loading-xs"></span>
+              <Loader2 class="w-3.5 h-3.5 animate-spin" />
+            {:else}
+              <RefreshCw class="w-3.5 h-3.5" />
             {/if}
-            🔄
-          </button>
+          </Button>
         </div>
       </div>
+    </Dialog.Header>
 
-      <div class="py-2">
-        <div
-          bind:this={logContainer}
-          class="bg-black text-green-400 p-4 rounded-lg overflow-auto max-h-[60vh] font-mono text-xs whitespace-pre-wrap"
-        >
-          {#if filteredLogs.length > 0}
-            {#each filteredLogs as log}
-              <div class={log.is_error ? 'text-error' : ''}>{log.line}</div>
-            {/each}
-          {:else if isLoading}
-            <div class="opacity-50">Loading logs...</div>
-          {:else}
-            <div class="opacity-50">No logs available.</div>
-          {/if}
-        </div>
-      </div>
-
-      <div class="modal-action">
-        <button class="btn btn-primary" onclick={close}>{i18n.t('Close')}</button>
+    <div class="flex-1 overflow-auto py-4">
+      <div
+        bind:this={logContainer}
+        class="bg-muted text-foreground p-4 rounded-lg border overflow-auto max-h-[60vh] font-mono text-[11px] leading-relaxed whitespace-pre-wrap shadow-inner"
+      >
+        {#if filteredLogs.length > 0}
+          {#each filteredLogs as log}
+            <div class={cn("py-0.5 border-b border-border/10 last:border-0", log.is_error ? 'text-destructive' : '')}>
+              {log.line}
+            </div>
+          {/each}
+        {:else if isLoading}
+          <div class="flex flex-col items-center justify-center py-20 opacity-40">
+            <Loader2 class="w-8 h-8 animate-spin mb-2" />
+            <p>Loading logs...</p>
+          </div>
+        {:else}
+          <div class="flex flex-col items-center justify-center py-20 opacity-40 italic">
+            <ScrollText class="w-8 h-8 mb-2" />
+            <p>No logs available.</p>
+          </div>
+        {/if}
       </div>
     </div>
-    <div class="modal-backdrop" role="presentation" onclick={close}></div>
-  </div>
-{/if}
+
+    <Dialog.Footer>
+      <Button onclick={close}>{i18n.t('Close')}</Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>
