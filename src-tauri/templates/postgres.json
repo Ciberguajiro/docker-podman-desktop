@@ -1,0 +1,9 @@
+{
+  "id": "postgres",
+  "name": "PostgreSQL",
+  "description": "The world's most advanced open source relational database.",
+  "image": "postgres:latest",
+  "ports": "5432:5432",
+  "envs": "POSTGRES_PASSWORD=password, POSTGRES_DB=mydb, POSTGRES_USER=user",
+  "volumes": "postgres_data:/var/lib/postgresql/data"
+}

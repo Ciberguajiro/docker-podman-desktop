@@ -1170,3 +1170,54 @@ mod tests {
         );
     }
 }
+
+#[tauri::command]
+pub async fn get_container_templates(app: tauri::AppHandle) -> Result<Vec<ContainerTemplate>, AppError> {
+    let mut templates = Vec::new();
+
+    // 1. Load embedded templates (from the templates directory in the project)
+    // In a real production app, we might use include_dir! or similar,
+    // but for now we'll read from the known path relative to the executable or just the source for development.
+    // Actually, let's use a simpler approach for this task: read from the directory we just created.
+
+    let resource_path = app.path().resource_dir().map_err(|e| AppError::SystemError(e.to_string()))?;
+    // During dev, resource_dir might not point to where we want.
+    // Let's also check a "templates" folder in the current working directory.
+
+    let mut search_paths = vec![
+        resource_path.join("templates"),
+        std::env::current_dir().unwrap_or_default().join("src-tauri").join("templates"),
+        std::env::current_dir().unwrap_or_default().join("templates"),
+    ];
+
+    // Add user-defined templates path (e.g. in AppData)
+    if let Ok(app_config_dir) = app.path().app_config_dir() {
+        let user_templates_dir = app_config_dir.join("templates");
+        let _ = std::fs::create_dir_all(&user_templates_dir);
+        search_paths.push(user_templates_dir);
+    }
+
+    let mut seen_ids = std::collections::HashSet::new();
+
+    for path in search_paths {
+        if path.exists() && path.is_dir() {
+            if let Ok(entries) = std::fs::read_dir(path) {
+                for entry in entries.flatten() {
+                    let file_path = entry.path();
+                    if file_path.extension().and_then(|s| s.to_str()) == Some("json") {
+                        if let Ok(content) = std::fs::read_to_string(&file_path) {
+                            if let Ok(template) = serde_json::from_str::<ContainerTemplate>(&content) {
+                                if !seen_ids.contains(&template.id) {
+                                    seen_ids.insert(template.id.clone());
+                                    templates.push(template);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(templates)
+}

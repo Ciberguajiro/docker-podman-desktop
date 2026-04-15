@@ -7,7 +7,7 @@ export async function invoke<T>(cmd: string, args: Record<string, any> = {}): Pr
     console.warn(`Tauri not detected. Mocking response for ${cmd}`);
     if (cmd === 'check_engine_cli_command') return true as any;
     if (cmd === 'docker_is_running') return {
-      success: (window as any).__MOCK_DOCKER_RUNNING__ ?? false,
+      success: (window as any).__MOCK_DOCKER_RUNNING__ ?? true,
       output: '',
       error: (window as any).__MOCK_DOCKER_ERROR__ ?? null
     } as any;
@@ -31,6 +31,10 @@ export async function invoke<T>(cmd: string, args: Record<string, any> = {}): Pr
     } as any;
     if (cmd === 'docker_images') return ((window as any).__MOCK_IMAGES__ || []) as any;
     if (cmd === 'docker_ps') return ((window as any).__MOCK_CONTAINERS__ || []) as any;
+    if (cmd === 'get_container_templates') return [
+      { id: 'mysql', name: 'MySQL', description: 'The world\'s most popular open source database.', image: 'mysql:latest', ports: '3306:3306', envs: 'MYSQL_ROOT_PASSWORD=password', volumes: 'mysql_data:/var/lib/mysql' },
+      { id: 'postgres', name: 'PostgreSQL', description: 'The world\'s most advanced open source relational database.', image: 'postgres:latest', ports: '5432:5432', envs: 'POSTGRES_PASSWORD=password', volumes: 'postgres_data:/var/lib/postgresql/data' }
+    ] as any;
     if (cmd === 'docker_logs') return `MOCK LOGS for ${args.containerId}\nLine 1\nLine 2\nTail was ${args.tail}` as any;
     if (cmd === 'docker_volumes') return [
       { name: 'vol1', driver: 'local', mountpoint: '/var/lib/docker/volumes/vol1/_data', created: '2023-01-01' },

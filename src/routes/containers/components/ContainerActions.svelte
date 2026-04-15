@@ -26,8 +26,8 @@
     onRemove
   } = $props<{
     container: DockerContainer;
-    onStart: (id: string) => void;
-    onStop: (id: string) => void;
+    onStart: (c: DockerContainer) => void;
+    onStop: (c: DockerContainer) => void;
     onExec: (c: DockerContainer) => void;
     onFiles: (c: DockerContainer) => void;
     onLogs: (c: DockerContainer) => void;
@@ -42,7 +42,7 @@
     <Tooltip.Root>
       <Tooltip.Trigger>
         {#snippet child({ props })}
-          <Button variant="ghost" size="icon" class="h-8 w-8 text-green-600" {...props} onclick={() => onStart(container.id)}>
+          <Button variant="ghost" size="icon" class="h-8 w-8 text-green-600" {...props} onclick={() => onStart(container)}>
             <Play class="h-4 w-4" />
           </Button>
         {/snippet}
@@ -53,7 +53,7 @@
     <Tooltip.Root>
       <Tooltip.Trigger>
         {#snippet child({ props })}
-          <Button variant="ghost" size="icon" class="h-8 w-8 text-amber-600" {...props} onclick={() => onStop(container.id)}>
+          <Button variant="ghost" size="icon" class="h-8 w-8 text-amber-600" {...props} onclick={() => onStop(container)}>
             <Square class="h-4 w-4" />
           </Button>
         {/snippet}

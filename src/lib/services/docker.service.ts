@@ -8,7 +8,8 @@ import type {
   CommandResult,
   ContainerFile,
   ImageHistoryEntry,
-  Engine
+  Engine,
+  ContainerTemplate
 } from '../types';
 
 export const dockerService = {
@@ -189,5 +190,9 @@ export const dockerService = {
 
   async runElevatedCommand(command: string, args: string[], elevated: boolean): Promise<CommandResult> {
     return invoke<CommandResult>('run_elevated_command', { command, args, elevated });
+  },
+
+  async getTemplates(): Promise<ContainerTemplate[]> {
+    return invoke<ContainerTemplate[]>('get_container_templates');
   }
 };
