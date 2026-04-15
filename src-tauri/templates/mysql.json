@@ -1,0 +1,9 @@
+{
+  "id": "mysql",
+  "name": "MySQL",
+  "description": "The world's most popular open source database.",
+  "image": "mysql:latest",
+  "ports": "3306:3306",
+  "envs": "MYSQL_ROOT_PASSWORD=password, MYSQL_DATABASE=mydb, MYSQL_USER=user, MYSQL_PASSWORD=password",
+  "volumes": "mysql_data:/var/lib/mysql"
+}

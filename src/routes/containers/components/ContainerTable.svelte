@@ -28,8 +28,8 @@
     sortDesc: boolean;
     onSort: (col: string) => void;
     onCopy: (text: string) => void;
-    onStart: (id: string) => void;
-    onStop: (id: string) => void;
+    onStart: (c: DockerContainer) => void;
+    onStop: (c: DockerContainer) => void;
     onExec: (c: DockerContainer) => void;
     onFiles: (c: DockerContainer) => void;
     onLogs: (c: DockerContainer) => void;

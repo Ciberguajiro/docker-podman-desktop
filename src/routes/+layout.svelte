@@ -7,12 +7,18 @@
   import { i18n } from "$lib/stores/i18n.svelte";
   import { settingsStore } from "$lib/stores/settings.svelte";
   import { dockerStore } from "$lib/stores/docker.svelte";
+  import { updaterService } from "$lib/services/updater.service";
   import { Button } from "$lib/components/ui/button";
   import { Zap, AlertTriangle, Lock, RefreshCw } from "lucide-svelte";
 
   let { children } = $props();
 
   onMount(() => {
+    // Check for updates on startup
+    // We check only if it is not in a dev environment/mocked
+    // Actually updater plugin handles this gracefully
+    updaterService.checkForUpdates(true);
+
     const handleKeydown = (e: KeyboardEvent) => {
       // Avoid shortcuts when typing in inputs
       if (

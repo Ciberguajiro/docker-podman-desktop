@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DockerContainer {
     pub id: String,
@@ -12,7 +11,6 @@ pub struct DockerContainer {
     pub ports: Vec<String>,
     pub compose_project: Option<String>,
     pub compose_service: Option<String>,
-
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -185,6 +183,17 @@ pub struct DockerEventActor {
     pub id: String,
     #[serde(rename = "Attributes", alias = "attributes")]
     pub attributes: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContainerTemplate {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub image: String,
+    pub ports: String,
+    pub envs: String,
+    pub volumes: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

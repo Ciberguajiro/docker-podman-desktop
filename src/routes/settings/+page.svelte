@@ -1,16 +1,18 @@
 <script lang="ts">
-  import { settingsStore } from "$lib/stores/settings.svelte";
   import { dockerStore } from "$lib/stores/docker.svelte";
+  import { settingsStore } from "$lib/stores/settings.svelte";
   import { toastStore } from "$lib/stores/toasts.svelte";
-  import type { CommandResult } from "$lib/types";
   import { i18n } from "$lib/stores/i18n.svelte";
+  import { updaterService } from "$lib/services/updater.service";
+  import type { CommandResult } from "$lib/types";
+
   import * as Card from "$lib/components/ui/card";
   import { Label } from "$lib/components/ui/label";
   import * as Select from "$lib/components/ui/select";
-  import { Switch } from "$lib/components/ui/switch";
-  import { Slider } from "$lib/components/ui/slider";
   import { Button } from "$lib/components/ui/button";
   import { Separator } from "$lib/components/ui/separator";
+  import { Switch } from "$lib/components/ui/switch";
+  import { Slider } from "$lib/components/ui/slider";
   import { Badge } from "$lib/components/ui/badge";
   import PageHeader from "$lib/components/ui/PageHeader.svelte";
   import Container from "$lib/components/ui/Container.svelte";
@@ -28,7 +30,8 @@
     Terminal,
     Cpu,
     MemoryStick,
-    Settings as SettingsIcon
+    Settings as SettingsIcon,
+    ArrowUpCircle
   } from "lucide-svelte";
 
   const dockerInfo = $derived(dockerStore.info);
@@ -56,6 +59,17 @@
       }
     } catch (e) {
       toastStore.error(`Error: ${e}`);
+    }
+  }
+
+  let isCheckingUpdate = $state(false);
+
+  async function checkUpdate() {
+    isCheckingUpdate = true;
+    try {
+        await updaterService.checkForUpdates(false);
+    } finally {
+        isCheckingUpdate = false;
     }
   }
 </script>
@@ -150,6 +164,25 @@
             />
           </div>
         {/if}
+
+        <Separator />
+
+        <div class="space-y-2">
+            <Label>{i18n.t("CheckUpdates")}</Label>
+            <Button
+                variant="outline"
+                class="w-full gap-2"
+                onclick={checkUpdate}
+                disabled={isCheckingUpdate}
+            >
+                {#if isCheckingUpdate}
+                    <RefreshCcw class="w-4 h-4 animate-spin" />
+                {:else}
+                    <ArrowUpCircle class="w-4 h-4" />
+                {/if}
+                {i18n.t("CheckUpdates")}
+            </Button>
+        </div>
       </Card.Content>
     </Card.Root>
 

@@ -151,6 +151,16 @@ export interface AppSettings {
   refreshInterval: number;
 }
 
+export interface ContainerTemplate {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  ports: string;
+  envs: string;
+  volumes: string;
+}
+
 export enum View {
   Containers = 'Containers',
   Images = 'Images',

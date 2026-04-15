@@ -4,7 +4,7 @@
   import { dockerStore } from '$lib/stores/docker.svelte';
   import { toastStore } from '$lib/stores/toasts.svelte';
   import { dockerService } from '$lib/services/docker.service';
-  import type { DockerContainer, DockerImage, CommandResult } from '$lib/types';
+  import type { DockerContainer, DockerImage, ContainerTemplate } from '$lib/types';
 
   import ConfirmationModal from '$lib/components/ConfirmationModal.svelte';
   import InspectModal from '$lib/components/InspectModal.svelte';
@@ -21,11 +21,13 @@
   import * as Accordion from "$lib/components/ui/accordion";
   import { Badge } from "$lib/components/ui/badge";
   import * as Table from "$lib/components/ui/table";
+  import * as Tabs from "$lib/components/ui/tabs";
   import PageHeader from "$lib/components/ui/PageHeader.svelte";
   import Container from "$lib/components/ui/Container.svelte";
 
   import ContainerTable from './components/ContainerTable.svelte';
   import ComposeGroup from './components/ComposeGroup.svelte';
+  import TemplateCard from './components/TemplateCard.svelte';
 
   import {
     RefreshCw,
@@ -34,18 +36,23 @@
     Search,
     Filter,
     Box,
-    Package
+    Package,
+    LayoutGrid,
+    Rocket
   } from "lucide-svelte";
   import { cn } from '$lib/utils';
 
   let containers = $state<DockerContainer[]>([]);
+  let templates = $state<ContainerTemplate[]>([]);
   let isLoading = $state(true);
+  let isTemplatesLoading = $state(false);
   let showAll = $state(false);
   let statusFilter = $state('all');
   let searchQuery = $state('');
   let searchInput = $state('');
   let sortCol = $state('name');
   let sortDesc = $state(false);
+  let activeTab = $state('list');
 
   // Modals state
   let showCreateModal = $state(false);
@@ -102,6 +109,17 @@
     }
   }
 
+  async function loadTemplates() {
+    isTemplatesLoading = true;
+    try {
+      templates = await dockerService.getTemplates();
+    } catch (e) {
+      console.error('Failed to load templates', e);
+    } finally {
+      isTemplatesLoading = false;
+    }
+  }
+
   $effect(() => {
     if (dockerStore.refreshCounter >= 0) {
       loadContainers();
@@ -110,6 +128,7 @@
 
   onMount(() => {
     loadContainers();
+    loadTemplates();
   });
 
   const filteredContainers = $derived.by(() => {
@@ -150,167 +169,207 @@
     return { groups, standalone };
   });
 
-  async function startContainer(id: string) {
+  async function startContainer(container: DockerContainer) {
     if (!dockerStore.selectedEngine) return;
-    const res = await dockerService.startContainer(dockerStore.selectedEngine, id);
-    if (res.success) toastStore.success('Container started');
-    else toastStore.error(`Error: ${res.error}`);
-    loadContainers();
+    const res = await dockerService.startContainer(dockerStore.selectedEngine, container.id);
+    if (res.success) {
+      toastStore.success('Container started');
+      loadContainers();
+    } else {
+      toastStore.error(res.error || 'Failed to start container');
+    }
   }
 
-  async function stopContainer(id: string) {
+  async function stopContainer(container: DockerContainer) {
     if (!dockerStore.selectedEngine) return;
-    const res = await dockerService.stopContainer(dockerStore.selectedEngine, id);
-    if (res.success) toastStore.success('Container stopped');
-    else toastStore.error(`Error: ${res.error}`);
-    loadContainers();
+    const res = await dockerService.stopContainer(dockerStore.selectedEngine, container.id);
+    if (res.success) {
+      toastStore.success('Container stopped');
+      loadContainers();
+    } else {
+      toastStore.error(res.error || 'Failed to stop container');
+    }
   }
 
   async function removeContainer() {
-    if (!containerToRemove || !dockerStore.selectedEngine) return;
+    if (!dockerStore.selectedEngine || !containerToRemove) return;
     const res = await dockerService.removeContainer(dockerStore.selectedEngine, containerToRemove.id);
-    if (res.success) toastStore.success('Container removed');
-    else toastStore.error(`Error: ${res.error}`);
-    showConfirmRemove = false;
-    loadContainers();
+    if (res.success) {
+      toastStore.success('Container removed');
+      showConfirmRemove = false;
+      containerToRemove = null;
+      loadContainers();
+    } else {
+      toastStore.error(res.error || 'Failed to remove container');
+    }
+  }
+
+  async function createContainer() {
+    if (!dockerStore.selectedEngine || !newImage) return;
+    const res = await dockerService.createContainer(dockerStore.selectedEngine, {
+      image: newImage,
+      name: newName,
+      ports: newPorts,
+      envs: newEnvs,
+      volumes: newVolumes,
+      restart_policy: newRestartPolicy
+    });
+
+    if (res.success) {
+      toastStore.success('Container created and started');
+      showCreateModal = false;
+      // Reset form
+      newImage = '';
+      newName = '';
+      newPorts = '';
+      newEnvs = '';
+      newVolumes = '';
+      newRestartPolicy = 'no';
+      loadContainers();
+    } else {
+      toastStore.error(res.error || 'Failed to create container');
+    }
+  }
+
+  function onDeployTemplate(template: ContainerTemplate) {
+    newImage = template.image;
+    newName = template.id + '-' + Math.random().toString(36).substring(7);
+    newPorts = template.ports;
+    newEnvs = template.envs;
+    newVolumes = template.volumes;
+    newRestartPolicy = 'always';
+    showCreateModal = true;
   }
 
   async function pruneContainers() {
     if (!dockerStore.selectedEngine) return;
     const res = await dockerService.prune(dockerStore.selectedEngine, 'containers');
-    if (res.success) toastStore.success('Unused containers pruned');
-    else toastStore.error(`Prune failed: ${res.error}`);
-    showConfirmPrune = false;
-    loadContainers();
-  }
-
-  async function inspectContainer(c: DockerContainer) {
-    if (!dockerStore.selectedEngine) return;
-    try {
-      inspectData = await dockerService.inspect(dockerStore.selectedEngine, c.id);
-      inspectTitle = `Inspect: ${c.name}`;
-      showInspectModal = true;
-    } catch (e) {
-      toastStore.error(`Failed to inspect container: ${e}`);
+    if (res.success) {
+      toastStore.success('Stopped containers pruned');
+      showConfirmPrune = false;
+      loadContainers();
+    } else {
+      toastStore.error(res.error || 'Failed to prune containers');
     }
   }
 
-  async function onComposeUp(project: string) {
+  async function inspectContainer(container: DockerContainer) {
     if (!dockerStore.selectedEngine) return;
-    toastStore.info(`Compose up: ${project}...`);
-    const res = await dockerService.composeUp(dockerStore.selectedEngine, project);
-    if (res.success) toastStore.success(`Project ${project} up`);
-    else toastStore.error(`Compose up failed: ${res.error}`);
-    loadContainers();
-  }
-
-  async function onComposeRestart(project: string) {
-    if (!dockerStore.selectedEngine) return;
-    toastStore.info(`Compose restart: ${project}...`);
-    const res = await dockerService.composeRestart(dockerStore.selectedEngine, project);
-    if (res.success) toastStore.success(`Project ${project} restarted`);
-    else toastStore.error(`Compose restart failed: ${res.error}`);
-    loadContainers();
-  }
-
-  async function onComposeDown(project: string) {
-    if (!dockerStore.selectedEngine) return;
-    toastStore.info(`Compose down: ${project}...`);
-    const res = await dockerService.composeDown(dockerStore.selectedEngine, project);
-    if (res.success) toastStore.success(`Project ${project} down`);
-    else toastStore.error(`Compose down failed: ${res.error}`);
-    loadContainers();
-  }
-
-  function openExec(c: DockerContainer) {
-    execId = c.id;
-    execName = c.name;
-    showExecModal = true;
-  }
-
-  function openLogs(c: DockerContainer) {
-    logsId = c.id;
-    logsName = c.name;
-    showLogsModal = true;
-  }
-
-  function openFiles(c: DockerContainer) {
-    filesId = c.id;
-    filesName = c.name;
-    showFilesModal = true;
-  }
-
-  function openExport(c: DockerContainer) {
-    exportId = c.id;
-    exportPath = `${c.name}_export.tar`;
-    showExportModal = true;
-  }
-
-  async function exportContainer() {
-    if (!exportId || !exportPath || !dockerStore.selectedEngine) return;
-    const res = await dockerService.exportContainer(dockerStore.selectedEngine, exportId, exportPath);
-    if (res.success) toastStore.success(`Container exported to ${exportPath}`);
-    else toastStore.error(`Export failed: ${res.error}`);
-    showExportModal = false;
+    try {
+      const data = await dockerService.inspect(dockerStore.selectedEngine, container.id);
+      inspectData = data;
+      inspectTitle = `Inspect: ${container.name}`;
+      showInspectModal = true;
+    } catch (e) {
+      console.error('Failed to inspect container', e);
+    }
   }
 
   async function loadUnusedImages() {
     if (!dockerStore.selectedEngine) return;
     try {
       const allImages = await dockerService.getImages(dockerStore.selectedEngine);
-      // Simple heuristic for "unused" if we don't have a direct prune-dry-run
-      // For now, just show all for this UI demo if needed, or implement real logic
-      unusedImages = allImages.slice(0, 5); // Placeholder
+      // Filter images that are not used by any container
+      const usedImages = new Set(containers.map(c => c.image));
+      unusedImages = allImages.filter(img => {
+        const fullRepo = `${img.repository}:${img.tag}`;
+        return !usedImages.has(fullRepo) && !usedImages.has(img.id) && !usedImages.has(img.id.replace('sha256:', '').slice(0, 12));
+      });
     } catch (e) {
-      console.error(e);
+      console.error('Failed to load unused images', e);
     }
   }
 
-  const sanitize = (s: string) => s.trim();
-  const sanitizePorts = (s: string) => s.split(',').map(p => p.trim()).filter(p => p);
+  function openExec(container: DockerContainer) {
+    execId = container.id;
+    execName = container.name;
+    showExecModal = true;
+  }
 
-  async function createContainer() {
-    if (!newImage || !dockerStore.selectedEngine) return;
-    const res = await dockerService.createContainer(dockerStore.selectedEngine, {
-      image: sanitize(newImage),
-      name: sanitize(newName),
-      ports: sanitizePorts(newPorts),
-      envs: sanitize(newEnvs),
-      volumes: sanitize(newVolumes),
-      restartPolicy: newRestartPolicy
-    });
+  function openLogs(container: DockerContainer) {
+    logsId = container.id;
+    logsName = container.name;
+    showLogsModal = true;
+  }
+
+  function openFiles(container: DockerContainer) {
+    filesId = container.id;
+    filesName = container.name;
+    showFilesModal = true;
+  }
+
+  function openExport(container: DockerContainer) {
+    exportId = container.id;
+    exportPath = `container_${container.id.slice(0, 8)}.tar`;
+    showExportModal = true;
+  }
+
+  async function exportContainer() {
+    if (!dockerStore.selectedEngine || !exportId) return;
+    const res = await dockerService.exportContainer(dockerStore.selectedEngine, exportId, exportPath);
     if (res.success) {
-      toastStore.success(`Container created from ${newImage}`);
-      showCreateModal = false;
-      newImage = ''; newName = ''; newPorts = ''; newEnvs = ''; newVolumes = ''; newRestartPolicy = 'no';
+      toastStore.success(`Container exported to ${exportPath}`);
+      showExportModal = false;
+    } else {
+      toastStore.error(res.error || 'Failed to export container');
+    }
+  }
+
+  async function onComposeUp(project: string) {
+    if (!dockerStore.selectedEngine) return;
+    const res = await dockerService.composeUp(dockerStore.selectedEngine, project);
+    if (res.success) {
+      toastStore.success(`Compose project ${project} up`);
       loadContainers();
     } else {
-      toastStore.error(`Error: ${res.error}`);
+      toastStore.error(res.error || 'Failed to compose up');
+    }
+  }
+
+  async function onComposeRestart(project: string) {
+    if (!dockerStore.selectedEngine) return;
+    const res = await dockerService.composeRestart(dockerStore.selectedEngine, project);
+    if (res.success) {
+      toastStore.success(`Compose project ${project} restarted`);
+      loadContainers();
+    } else {
+      toastStore.error(res.error || 'Failed to compose restart');
+    }
+  }
+
+  async function onComposeDown(project: string) {
+    if (!dockerStore.selectedEngine) return;
+    const res = await dockerService.composeDown(dockerStore.selectedEngine, project);
+    if (res.success) {
+      toastStore.success(`Compose project ${project} down`);
+      loadContainers();
+    } else {
+      toastStore.error(res.error || 'Failed to compose down');
     }
   }
 
   function toggleSort(col: string) {
-    if (sortCol === col) sortDesc = !sortDesc;
-    else {
+    if (sortCol === col) {
+      sortDesc = !sortDesc;
+    } else {
       sortCol = col;
       sortDesc = false;
     }
   }
 
-  async function copyToClipboard(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      toastStore.success(i18n.t('CopiedToClipboard'));
-    } catch (err) {
-      toastStore.error(i18n.t('FailedToCopy'));
-    }
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      toastStore.success(i18n.t('CopiedToClipboard') || 'Copied to clipboard');
+    }).catch(() => {
+      toastStore.error(i18n.t('FailedToCopy') || 'Failed to copy');
+    });
   }
 </script>
 
 <Container>
   <PageHeader
     title={i18n.t('Containers')}
-    description="Manage and monitor your running containers and compose projects."
+    description="Manage your running and stopped containers."
     icon={Box}
   >
     <div class="flex items-center gap-2">
@@ -318,7 +377,11 @@
         <RefreshCw class={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
         {i18n.t('Refresh')}
       </Button>
-      <Button size="sm" onclick={() => showCreateModal = true}>
+      <Button size="sm" onclick={() => {
+        // Reset form for new manual container
+        newImage = ''; newName = ''; newPorts = ''; newEnvs = ''; newVolumes = ''; newRestartPolicy = 'no';
+        showCreateModal = true;
+      }}>
         <Plus class="h-4 w-4 mr-2" />
         {i18n.t('NewContainer')}
       </Button>
@@ -329,80 +392,70 @@
     </div>
   </PageHeader>
 
-  <div class="flex flex-col md:flex-row gap-4 items-center">
-    <div class="relative flex-1 w-full">
-      <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-      <Input
-        type="search"
-        placeholder={i18n.t('Search')}
-        class="pl-9"
-        bind:value={searchInput}
-      />
-    </div>
-    <div class="flex items-center gap-2 w-full md:w-auto">
-      <div class="flex items-center space-x-2 bg-muted/50 px-3 py-2 rounded-md border h-10">
-        <Checkbox id="show-all" bind:checked={showAll} onCheckedChange={loadContainers} />
-        <Label for="show-all" class="text-xs font-medium cursor-pointer whitespace-nowrap">{i18n.t('ShowAll')}</Label>
-      </div>
-      <Select.Root type="single" value={statusFilter} onValueChange={v => statusFilter = v || 'all'}>
-        <Select.Trigger class="w-[140px] h-10">
-          <Filter class="h-3.5 w-3.5 mr-2" />
-          {statusFilter === 'all' ? i18n.t('AllStatuses') : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
-        </Select.Trigger>
-        <Select.Content>
-          <Select.Item value="all">{i18n.t('AllStatuses')}</Select.Item>
-          <Select.Item value="running">{i18n.t('Running')}</Select.Item>
-          <Select.Item value="exited">{i18n.t('Stopped')}</Select.Item>
-          <Select.Item value="created">{i18n.t('CreatedState')}</Select.Item>
-        </Select.Content>
-      </Select.Root>
-    </div>
-  </div>
+  <Tabs.Root value={activeTab} onValueChange={v => activeTab = v || 'list'} class="w-full">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+      <Tabs.List class="grid w-full md:w-[400px] grid-cols-2">
+        <Tabs.Trigger value="list" class="gap-2">
+          <LayoutGrid class="h-4 w-4" />
+          {i18n.t('ContainersList')}
+        </Tabs.Trigger>
+        <Tabs.Trigger value="quickstart" class="gap-2">
+          <Rocket class="h-4 w-4" />
+          {i18n.t('QuickStart')}
+        </Tabs.Trigger>
+      </Tabs.List>
 
-  <div class="space-y-6">
-    {#if isLoading && containers.length === 0}
-      <div class="grid gap-4">
-        {#each Array(3) as i_}
-          <Card.Root class="h-32 animate-pulse bg-muted/20" />
-        {/each}
-      </div>
-    {:else}
-      <!-- Grouped by Project (Compose) -->
-      {#each Object.entries(groupedContainers.groups) as [project, groupContainers] (project)}
-        <ComposeGroup
-          {project}
-          containers={groupContainers}
-          {onComposeUp}
-          {onComposeRestart}
-          {onComposeDown}
-          sortCol={sortCol}
-          sortDesc={sortDesc}
-          onSort={toggleSort}
-          onCopy={copyToClipboard}
-          onStart={startContainer}
-          onStop={stopContainer}
-          onExec={openExec}
-          onFiles={openFiles}
-          onLogs={openLogs}
-          onExport={openExport}
-          onInspect={inspectContainer}
-          onRemove={(c) => { containerToRemove = c; showConfirmRemove = true; }}
-        />
-      {/each}
-
-      <!-- Standalone Containers -->
-      {#if groupedContainers.standalone.length > 0}
-        <div class="space-y-4">
-          <div class="flex items-center gap-2 px-1">
-            <Box class="h-4 w-4 text-muted-foreground" />
-            <h2 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              {i18n.t('StandaloneContainers')}
-            </h2>
+      {#if activeTab === 'list'}
+      <div class="flex flex-col md:flex-row gap-4 items-center w-full md:w-auto">
+        <div class="relative flex-1 w-full md:w-64">
+          <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder={i18n.t('Search')}
+            class="pl-9"
+            bind:value={searchInput}
+          />
+        </div>
+        <div class="flex items-center gap-2 w-full md:w-auto">
+          <div class="flex items-center space-x-2 bg-muted/50 px-3 py-2 rounded-md border h-10">
+            <Checkbox id="show-all" bind:checked={showAll} onCheckedChange={loadContainers} />
+            <Label for="show-all" class="text-xs font-medium cursor-pointer whitespace-nowrap">{i18n.t('ShowAll')}</Label>
           </div>
-          <ContainerTable
-            containers={groupedContainers.standalone}
-            {sortCol}
-            {sortDesc}
+          <Select.Root type="single" value={statusFilter} onValueChange={v => statusFilter = v || 'all'}>
+            <Select.Trigger class="w-[140px] h-10">
+              <Filter class="h-3.5 w-3.5 mr-2" />
+              {statusFilter === 'all' ? i18n.t('AllStatuses') : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
+            </Select.Trigger>
+            <Select.Content>
+              <Select.Item value="all">{i18n.t('AllStatuses')}</Select.Item>
+              <Select.Item value="running">{i18n.t('Running')}</Select.Item>
+              <Select.Item value="exited">{i18n.t('Stopped')}</Select.Item>
+              <Select.Item value="created">{i18n.t('CreatedState')}</Select.Item>
+            </Select.Content>
+          </Select.Root>
+        </div>
+      </div>
+      {/if}
+    </div>
+
+    <Tabs.Content value="list" class="space-y-6 mt-0">
+      {#if isLoading && containers.length === 0}
+        <div class="grid gap-4">
+          {#each Array(3) as i_}
+            <Card.Root class="h-32 animate-pulse bg-muted/20" />
+          {/each}
+        </div>
+      {:else}
+        <!-- Grouped by Project (Compose) -->
+        {#each Object.entries(groupedContainers.groups) as [project, groupContainers] (project)}
+          <ComposeGroup
+            {project}
+            containers={groupContainers}
+            {onComposeUp}
+            {onComposeRestart}
+            {onComposeDown}
+            sortCol={sortCol}
+            sortDesc={sortDesc}
             onSort={toggleSort}
             onCopy={copyToClipboard}
             onStart={startContainer}
@@ -414,66 +467,119 @@
             onInspect={inspectContainer}
             onRemove={(c) => { containerToRemove = c; showConfirmRemove = true; }}
           />
-        </div>
-      {/if}
+        {/each}
 
-      {#if containers.length === 0 && !isLoading}
-        <div class="flex flex-col items-center justify-center py-20 text-center">
-          <div class="bg-muted p-4 rounded-full mb-4">
-            <Package class="h-10 w-10 text-muted-foreground/50" />
+        <!-- Standalone Containers -->
+        {#if groupedContainers.standalone.length > 0}
+          <div class="space-y-4">
+            <div class="flex items-center gap-2 px-1">
+              <Box class="h-4 w-4 text-muted-foreground" />
+              <h2 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                {i18n.t('StandaloneContainers')}
+              </h2>
+            </div>
+            <ContainerTable
+              containers={groupedContainers.standalone}
+              {sortCol}
+              {sortDesc}
+              onSort={toggleSort}
+              onCopy={copyToClipboard}
+              onStart={startContainer}
+              onStop={stopContainer}
+              onExec={openExec}
+              onFiles={openFiles}
+              onLogs={openLogs}
+              onExport={openExport}
+              onInspect={inspectContainer}
+              onRemove={(c) => { containerToRemove = c; showConfirmRemove = true; }}
+            />
           </div>
-          <h3 class="text-lg font-medium">{i18n.t('NoContainersFound')}</h3>
-          <p class="text-sm text-muted-foreground max-w-xs mt-1">
-            Try changing your filters or create a new container to get started.
-          </p>
-        </div>
-      {/if}
-    {/if}
+        {/if}
 
-    <!-- Unused Images Collapsible -->
-    <div class="mt-8 border rounded-lg overflow-hidden bg-card">
-      <Accordion.Root type="single" onValueChange={v => v === 'unused-images' && loadUnusedImages()}>
-        <Accordion.Item value="unused-images" class="border-none">
-          <Accordion.Trigger class="px-4 py-3 hover:bg-muted/50 transition-colors">
-            <span class="flex items-center gap-2 font-medium">
-              <Trash2 class="h-4 w-4 text-muted-foreground" />
-              {i18n.t('UnusedImages')}
-              <Badge variant="secondary" class="ml-2">{unusedImages.length}</Badge>
-            </span>
-          </Accordion.Trigger>
-          <Accordion.Content class="p-0 border-t">
-            <Table.Root>
-              <Table.Header>
-                <Table.Row class="bg-muted/30">
-                  <Table.Head>{i18n.t('ImageID')}</Table.Head>
-                  <Table.Head>{i18n.t('Repository')}</Table.Head>
-                  <Table.Head>{i18n.t('Tag')}</Table.Head>
-                  <Table.Head class="text-right">{i18n.t('Size')}</Table.Head>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {#each unusedImages as img (img.id)}
-                  <Table.Row>
-                    <Table.Cell class="font-mono text-[10px] text-muted-foreground">{img.id.slice(0, 12)}</Table.Cell>
-                    <Table.Cell class="font-medium text-xs">{img.repository}</Table.Cell>
-                    <Table.Cell><Badge variant="outline" class="text-[10px] px-1 h-4">{img.tag}</Badge></Table.Cell>
-                    <Table.Cell class="text-right text-xs text-muted-foreground">{img.size}</Table.Cell>
+        {#if containers.length === 0 && !isLoading}
+          <div class="flex flex-col items-center justify-center py-20 text-center">
+            <div class="bg-muted p-4 rounded-full mb-4">
+              <Package class="h-10 w-10 text-muted-foreground/50" />
+            </div>
+            <h3 class="text-lg font-medium">{i18n.t('NoContainersFound')}</h3>
+            <p class="text-sm text-muted-foreground max-w-xs mt-1">
+              Try changing your filters or create a new container to get started.
+            </p>
+          </div>
+        {/if}
+      {/if}
+
+      <!-- Unused Images Collapsible -->
+      <div class="mt-8 border rounded-lg overflow-hidden bg-card">
+        <Accordion.Root type="single" onValueChange={v => v === 'unused-images' && loadUnusedImages()}>
+          <Accordion.Item value="unused-images" class="border-none">
+            <Accordion.Trigger class="px-4 py-3 hover:bg-muted/50 transition-colors">
+              <span class="flex items-center gap-2 font-medium">
+                <Trash2 class="h-4 w-4 text-muted-foreground" />
+                {i18n.t('UnusedImages')}
+                <Badge variant="secondary" class="ml-2">{unusedImages.length}</Badge>
+              </span>
+            </Accordion.Trigger>
+            <Accordion.Content class="p-0 border-t">
+              <Table.Root>
+                <Table.Header>
+                  <Table.Row class="bg-muted/30">
+                    <Table.Head>{i18n.t('ImageID')}</Table.Head>
+                    <Table.Head>{i18n.t('Repository')}</Table.Head>
+                    <Table.Head>{i18n.t('Tag')}</Table.Head>
+                    <Table.Head class="text-right">{i18n.t('Size')}</Table.Head>
                   </Table.Row>
-                {/each}
-                {#if unusedImages.length === 0}
-                  <Table.Row>
-                    <Table.Cell colspan={4} class="h-16 text-center text-muted-foreground text-sm italic">
-                      No unused images found.
-                    </Table.Cell>
-                  </Table.Row>
-                {/if}
-              </Table.Body>
-            </Table.Root>
-          </Accordion.Content>
-        </Accordion.Item>
-      </Accordion.Root>
-    </div>
-  </div>
+                </Table.Header>
+                <Table.Body>
+                  {#each unusedImages as img (img.id)}
+                    <Table.Row>
+                      <Table.Cell class="font-mono text-[10px] text-muted-foreground">{img.id.slice(0, 12)}</Table.Cell>
+                      <Table.Cell class="font-medium text-xs">{img.repository}</Table.Cell>
+                      <Table.Cell><Badge variant="outline" class="text-[10px] px-1 h-4">{img.tag}</Badge></Table.Cell>
+                      <Table.Cell class="text-right text-xs text-muted-foreground">{img.size}</Table.Cell>
+                    </Table.Row>
+                  {/each}
+                  {#if unusedImages.length === 0}
+                    <Table.Row>
+                      <Table.Cell colspan={4} class="h-16 text-center text-muted-foreground text-sm italic">
+                        No unused images found.
+                      </Table.Cell>
+                    </Table.Row>
+                  {/if}
+                </Table.Body>
+              </Table.Root>
+            </Accordion.Content>
+          </Accordion.Item>
+        </Accordion.Root>
+      </div>
+    </Tabs.Content>
+
+    <Tabs.Content value="quickstart" class="mt-0">
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
+        {#if isTemplatesLoading}
+          {#each Array(3) as i_}
+            <Card.Root class="h-48 animate-pulse bg-muted/20" />
+          {/each}
+        {:else}
+          {#each templates as template (template.id)}
+            <TemplateCard {template} onDeploy={onDeployTemplate} />
+          {/each}
+
+          {#if templates.length === 0}
+             <div class="col-span-full flex flex-col items-center justify-center py-20 text-center">
+              <div class="bg-muted p-4 rounded-full mb-4">
+                <Rocket class="h-10 w-10 text-muted-foreground/50" />
+              </div>
+              <h3 class="text-lg font-medium">No templates found</h3>
+              <p class="text-sm text-muted-foreground max-w-xs mt-1">
+                Add JSON templates to your config directory to see them here.
+              </p>
+            </div>
+          {/if}
+        {/if}
+      </div>
+    </Tabs.Content>
+  </Tabs.Root>
 </Container>
 
 <!-- Modals -->
@@ -590,3 +696,9 @@
   bind:show={showFilesModal}
 />
 {/if}
+
+<style>
+  :global(.tabs-content) {
+    outline: none !important;
+  }
+</style>
