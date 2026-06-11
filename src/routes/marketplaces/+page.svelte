@@ -1,6 +1,7 @@
 <script lang="ts">
   import { i18n } from "$lib/stores/i18n.svelte";
   import { dockerStore } from "$lib/stores/docker.svelte";
+  import { toastStore } from "$lib/stores/toasts.svelte";
   import { dockerService } from "$lib/services/docker.service";
   import PullModal from "$lib/components/PullModal.svelte";
 
@@ -36,7 +37,7 @@
       );
       results = data;
     } catch (e) {
-      console.error("Failed to search", e);
+      toastStore.error(`Failed to search: ${e}`);
     } finally {
       isLoading = false;
     }
@@ -51,7 +52,7 @@
 <Container>
   <PageHeader
     title={i18n.t("Marketplace")}
-    description="Search and pull images from Docker Hub registries."
+    description={i18n.t('ReadyToExploreMessage') || 'Search and pull images from Docker Hub registries.'}
     icon={ShoppingCart}
   />
 
@@ -144,9 +145,9 @@
         <div class="bg-muted p-4 rounded-full mb-4">
           <Search class="h-10 w-10 text-muted-foreground/50" />
         </div>
-        <h3 class="text-lg font-medium">Ready to explore?</h3>
+        <h3 class="text-lg font-medium">{i18n.t('ReadyToExplore') || 'Ready to explore?'}</h3>
         <p class="text-sm text-muted-foreground max-w-xs mt-1">
-          Search for your favorite images and start building today.
+          {i18n.t('ReadyToExploreMessage') || 'Search for your favorite images and start building today.'}
         </p>
       </div>
     {/if}

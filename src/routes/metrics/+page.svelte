@@ -3,6 +3,7 @@
   import { listen } from '$lib/tauri';
   import { i18n } from '$lib/stores/i18n.svelte';
   import { dockerStore } from '$lib/stores/docker.svelte';
+  import { toastStore } from '$lib/stores/toasts.svelte';
   import { dockerService } from '$lib/services/docker.service';
   import type { ContainerStats, SystemMetrics, StatsEvent } from '$lib/types';
 
@@ -38,7 +39,7 @@
       const containers = await dockerService.getContainerStats(dockerStore.selectedEngine);
       containerStats = containers;
     } catch (e) {
-      console.error('Failed to load metrics', e);
+      toastStore.error(`Failed to load metrics: ${e}`);
     } finally {
       isLoading = false;
     }
@@ -52,7 +53,7 @@
       });
       await dockerService.streamStats(dockerStore.selectedEngine);
     } catch (e) {
-      console.error('Failed to start streaming metrics', e);
+      toastStore.error(`Failed to start streaming metrics: ${e}`);
     }
   }
 
@@ -74,7 +75,7 @@
 <Container>
   <PageHeader
     title={i18n.t('Metrics')}
-    description="Real-time engine and container performance monitoring."
+    description={i18n.t('ContainerPerformance') || 'Real-time engine and container performance monitoring.'}
     icon={Activity}
   >
     <Button variant="outline" size="sm" onclick={loadMetrics} disabled={isLoading}>
@@ -94,7 +95,7 @@
           {systemMetrics ? (systemMetrics.cpu_usage.reduce((a, b) => a + b, 0) / systemMetrics.cpu_usage.length).toFixed(1) : '0'}%
         </div>
         <p class="text-xs text-muted-foreground mt-1">
-          Overall system CPU load
+          {i18n.t('OverallSystemCPULoad') || 'Overall system CPU load'}
         </p>
       </Card.Content>
     </Card.Root>
@@ -123,7 +124,7 @@
       <Card.Content>
         <div class="text-2xl font-bold">{containerStats.length}</div>
         <p class="text-xs text-muted-foreground mt-1">
-          Active containers monitored
+          {i18n.t('ActiveContainersMonitored') || 'Active containers monitored'}
         </p>
       </Card.Content>
     </Card.Root>
@@ -133,7 +134,7 @@
     <div class="flex items-center gap-2 px-1">
       <Activity class="h-4 w-4 text-muted-foreground" />
       <h2 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        {i18n.t('ContainerStats') || 'Container Performance'}
+                  {i18n.t('ContainerPerformance') || 'Container Performance'}
       </h2>
     </div>
 
@@ -181,9 +182,9 @@
               <Table.Cell colspan={6} class="h-32 text-center text-muted-foreground">
                 {#if isLoading}
                   <RefreshCw class="h-6 w-6 animate-spin mx-auto mb-2 opacity-20" />
-                  Loading stats...
+                  {i18n.t('LoadingStats') || 'Loading stats...'}
                 {:else}
-                  No active containers to monitor.
+                  {i18n.t('NoActiveContainers') || 'No active containers to monitor.'}
                 {/if}
               </Table.Cell>
             </Table.Row>

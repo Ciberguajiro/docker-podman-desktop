@@ -19,7 +19,8 @@
     ChevronDown,
     Zap,
     CircleStop,
-    Server
+    Server,
+    LayoutDashboard
   } from "lucide-svelte";
 
   let { dockerRunning, dockerInfo } = $props<{
@@ -28,6 +29,7 @@
   }>();
 
   const views = $derived([
+    { urls: "/" , id: View.Dashboard, label: i18n.t('Dashboard'), icon: LayoutDashboard },
     { urls: "/containers" , id: View.Containers, label: i18n.t('Containers'), icon: Box },
     { urls: "/images" , id: View.Images, label: i18n.t('Images'), icon: Layers },
     { urls: "/volumes" , id: View.Volumes, label: i18n.t('Volumes'), icon: Database },

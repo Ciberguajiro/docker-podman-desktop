@@ -3,6 +3,7 @@
   import { invoke } from '$lib/tauri';
   import { dockerStore } from '$lib/stores/docker.svelte';
   import { toastStore } from '$lib/stores/toasts.svelte';
+  import { i18n } from '$lib/stores/i18n.svelte';
   import type { CommandResult, BuildEvent } from '$lib/types';
   import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
@@ -38,7 +39,7 @@
 
   async function startBuild() {
     if (!buildTag) {
-      toastStore.error('Please provide a tag for the image');
+      toastStore.error(i18n.t('PleaseProvideTag') || 'Please provide a tag for the image');
       return;
     }
 
@@ -52,14 +53,14 @@
       });
 
       if (res.success) {
-        toastStore.success(`Image ${buildTag} built successfully`);
+        toastStore.success(i18n.t('ImageBuiltSuccessfully')?.replace('{tag}', buildTag) || `Image ${buildTag} built successfully`);
         if (onComplete) onComplete();
         show = false;
       } else {
         if (res.error?.includes("terminated")) {
           buildLogs = [...buildLogs, "Build cancelled."];
         } else {
-          toastStore.error(`Build failed: ${res.error}`);
+          toastStore.error(`${i18n.t('BuildFailed') || 'Build failed'}: ${res.error}`);
         }
       }
     } catch (e) {
@@ -75,7 +76,7 @@
       await invoke('docker_stop_build');
       toastStore.info('Build cancelled');
     } catch (e) {
-      console.error('Failed to stop build', e);
+      toastStore.error(`Failed to stop build: ${e}`);
     }
   }
 

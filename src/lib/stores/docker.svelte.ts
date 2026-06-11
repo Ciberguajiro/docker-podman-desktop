@@ -63,8 +63,7 @@ function createDockerStore() {
 
     try {
       if (listeningEngine === null) {
-        await listen<DockerEvent>('docker-event', (event) => {
-          console.log('Docker event received:', event.payload.Action, event.payload.Type);
+        await listen<DockerEvent>('docker-event', () => {
           refreshCounter++;
         });
       }

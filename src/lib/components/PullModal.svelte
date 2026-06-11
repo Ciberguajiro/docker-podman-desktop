@@ -30,6 +30,10 @@
     if (show && image) {
       imageName = image;
     }
+    if (!show) {
+      imageName = '';
+      logs = [];
+    }
   });
 
   async function handlePull() {
@@ -73,7 +77,7 @@
       await invoke('docker_stop_pull');
       toastStore.info('Pulling cancelled');
     } catch (e) {
-      console.error('Failed to stop pull', e);
+      toastStore.error(`Failed to stop pull: ${e}`);
     }
   }
 

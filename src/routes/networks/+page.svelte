@@ -58,7 +58,6 @@
     try {
       networks = await dockerService.getNetworks(dockerStore.selectedEngine);
     } catch (e) {
-      console.error('Failed to load networks', e);
       toastStore.error(`Failed to load networks: ${e}`);
     } finally {
       isLoading = false;

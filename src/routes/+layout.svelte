@@ -68,10 +68,10 @@
         <div class="p-4 bg-destructive/10 rounded-full mb-6">
           <AlertTriangle class="w-12 h-12 text-destructive" />
         </div>
-        <h1 class="text-3xl font-bold tracking-tight mb-2">Docker CLI not found</h1>
-        <p class="text-muted-foreground mb-8 max-w-md">
-          Please install Docker CLI to use this application.
-        </p>
+          <h1 class="text-3xl font-bold tracking-tight mb-2">{i18n.t('DockerCliNotFound')}</h1>
+          <p class="text-muted-foreground mb-8 max-w-md">
+            {i18n.t('DockerCliNotFoundMessage')}
+          </p>
         <Button
           size="lg"
           onclick={() => dockerStore.checkStatus()}

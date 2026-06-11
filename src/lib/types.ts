@@ -162,6 +162,7 @@ export interface ContainerTemplate {
 }
 
 export enum View {
+  Dashboard = 'Dashboard',
   Containers = 'Containers',
   Images = 'Images',
   Volumes = 'Volumes',

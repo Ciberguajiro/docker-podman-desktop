@@ -1,6 +1,7 @@
 <script lang="ts">
   import { dockerStore } from '$lib/stores/docker.svelte';
   import { toastStore } from '$lib/stores/toasts.svelte';
+  import { i18n } from '$lib/stores/i18n.svelte';
   import type { CommandResult } from '$lib/types';
   import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
@@ -30,11 +31,11 @@
         output = res.output;
       } else {
         output = `Error: ${res.error}\n${res.output}`;
-        toastStore.error('Execution failed');
+        toastStore.error(i18n.t('ExecutionFailed') || 'Execution failed');
       }
     } catch (e) {
       output = `Error: ${e}`;
-      toastStore.error('System error during execution');
+      toastStore.error(i18n.t('SystemErrorExecution') || 'System error during execution');
     } finally {
       isExecuting = false;
     }

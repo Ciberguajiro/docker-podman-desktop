@@ -77,7 +77,7 @@
 <Container>
   <PageHeader
     title={i18n.t("Settings")}
-    description="Configure general appearance and behavior."
+    description={i18n.t('ConfigAppearance') || 'Configure general appearance and behavior.'}
     icon={SettingsIcon}
   />
 
@@ -89,7 +89,7 @@
           {i18n.t("AppSettings")}
         </Card.Title>
         <Card.Description>
-          Configure general appearance and behavior.
+          {i18n.t('ConfigAppearance') || 'Configure general appearance and behavior.'}
         </Card.Description>
       </Card.Header>
       <Card.Content class="space-y-6">
@@ -140,7 +140,7 @@
         <div class="flex items-center justify-between">
           <div class="space-y-0.5">
             <Label for="auto-refresh">{i18n.t("AutoRefresh")}</Label>
-            <p class="text-sm text-muted-foreground">Automatically update data from the engine.</p>
+            <p class="text-sm text-muted-foreground">{i18n.t('AutoRefresh') ? `${i18n.t('AutoRefresh')} data` : 'Automatically update data from the engine.'}</p>
           </div>
           <Switch
             id="auto-refresh"
@@ -193,7 +193,7 @@
           {i18n.t("SystemCleanup")}
         </Card.Title>
         <Card.Description>
-          {i18n.t("PruneAdvice") || "Remove unused Docker resources to free up space."}
+          {i18n.t('PruneAdvice') || "Remove unused Docker resources to free up space."}
         </Card.Description>
       </Card.Header>
       <Card.Content class="space-y-4">
@@ -230,7 +230,7 @@
           {i18n.t("DockerInfo")}
         </Card.Title>
         <Card.Description>
-          Information about the connected engine.
+          {i18n.t('ConfigEngine') || 'Information about the connected engine.'}
         </Card.Description>
       </Card.Header>
       <Card.Content>
@@ -287,21 +287,21 @@
             <div class="flex items-start gap-3">
               <Box class="w-4 h-4 mt-1 text-muted-foreground" />
               <div>
-                <p class="text-sm font-medium leading-none mb-1">Cgroup Driver</p>
+                <p class="text-sm font-medium leading-none mb-1">{i18n.t('CgroupDriver') || 'Cgroup Driver'}</p>
                 <p class="text-sm text-muted-foreground">{dockerInfo.cgroup_driver} (v{dockerInfo.cgroup_version})</p>
               </div>
             </div>
             <div class="flex items-start gap-3">
               <Terminal class="w-4 h-4 mt-1 text-muted-foreground" />
               <div>
-                <p class="text-sm font-medium leading-none mb-1">Logging Driver</p>
+                <p class="text-sm font-medium leading-none mb-1">{i18n.t('LoggingDriver') || 'Logging Driver'}</p>
                 <p class="text-sm text-muted-foreground">{dockerInfo.logging_driver}</p>
               </div>
             </div>
             <div class="flex items-start gap-3">
               <HardDrive class="w-4 h-4 mt-1 text-muted-foreground" />
               <div>
-                <p class="text-sm font-medium leading-none mb-1">Root Directory</p>
+                <p class="text-sm font-medium leading-none mb-1">{i18n.t('DockerRootDir') || 'Root Directory'}</p>
                 <p class="text-sm text-muted-foreground truncate max-w-[200px]" title={dockerInfo.docker_root_dir}>
                   {dockerInfo.docker_root_dir}
                 </p>

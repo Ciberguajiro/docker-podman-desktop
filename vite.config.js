@@ -3,7 +3,6 @@ import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path';
 
-
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/

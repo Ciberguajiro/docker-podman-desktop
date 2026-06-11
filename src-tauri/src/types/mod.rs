@@ -57,7 +57,7 @@ pub struct DockerNetwork {
     pub subnet: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct DockerInfo {
     pub containers: i32,
     pub containers_running: i32,

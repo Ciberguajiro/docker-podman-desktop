@@ -56,7 +56,6 @@
     try {
       volumes = await dockerService.getVolumes(dockerStore.selectedEngine);
     } catch (e) {
-      console.error('Failed to load volumes', e);
       toastStore.error(`Failed to load volumes: ${e}`);
     } finally {
       isLoading = false;

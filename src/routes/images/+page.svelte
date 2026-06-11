@@ -82,7 +82,7 @@
     try {
       images = await dockerService.getImages(dockerStore.selectedEngine);
     } catch (e) {
-      console.error('Failed to load images', e);
+      toastStore.error(`Failed to load images: ${e}`);
     } finally {
       isLoading = false;
     }
