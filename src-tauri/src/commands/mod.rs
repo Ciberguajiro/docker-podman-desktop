@@ -5,6 +5,7 @@ use crate::helper::*;
 use crate::types::*;
 use shared::*;
 use streaming::*;
+use tauri::Manager;
 use std::process::Stdio;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
